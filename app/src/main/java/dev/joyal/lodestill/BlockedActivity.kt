@@ -22,6 +22,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -171,12 +175,13 @@ private fun BlockedScreen(label: String, remainingSec: Long, progress: Float, en
     val dark = cs.background == Color(0xFF000000)
     val ends = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(endsAt))
     Column(Modifier.fillMaxSize().safeDrawingPadding().padding(horizontal = 28.dp)) {
-        Spacer(Modifier.height(32.dp))
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+        Spacer(Modifier.height(24.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             LodestillMark(Modifier.size(30.dp, 27.dp), cs.onBackground, if (dark) Color(0xFFFF8A3D) else Color(0xFFFF6A1A))
             Text("Lodestill", fontFamily = GeistSans, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = cs.onBackground)
         }
-        Spacer(Modifier.height(56.dp))
+        Spacer(Modifier.height(40.dp))
         Text("BLOCKED APP", fontFamily = GeistMono, fontSize = 11.sp, letterSpacing = 1.3.sp, color = cs.onSurfaceVariant)
         Spacer(Modifier.height(14.dp))
         Text("$label is blocked\nduring your session", fontFamily = GeistSans, fontWeight = FontWeight.SemiBold,
@@ -196,7 +201,7 @@ private fun BlockedScreen(label: String, remainingSec: Long, progress: Float, en
             Text("Ends $ends · building a layer at $place", fontFamily = GeistSans, fontSize = 12.sp,
                 color = cs.onSurfaceVariant, modifier = Modifier.padding(top = 12.dp))
         }
-        Spacer(Modifier.weight(1f))
+        }
         Box(Modifier.fillMaxWidth().height(52.dp).background(cs.onBackground, RoundedCornerShape(10.dp))
             .clickable(onClick = onBack), contentAlignment = Alignment.Center) {
             Text("Back to session", fontFamily = GeistSans, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = cs.background)

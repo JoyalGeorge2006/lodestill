@@ -83,6 +83,7 @@ jobs:
             FOCUS=$(adb shell dumpsys window | grep -E "mCurrentFocus"); echo "selected focus: $FOCUS"; echo "$FOCUS" | grep -q "dev.joyal.lodestill.debug/dev.joyal.lodestill.BlockedActivity" || touch /tmp/lodestill_test_failed
             mkdir -p shots; adb exec-out screencap -p > shots/blocked_screen.png; adb shell uiautomator dump /sdcard/blk.xml; adb pull /sdcard/blk.xml shots/blk.xml || touch /tmp/lodestill_test_failed
             grep -q "Clock is blocked" shots/blk.xml && grep -q "Back to session" shots/blk.xml && grep -q "TIME REMAINING" shots/blk.xml && grep -qE "text=\"[0-9]+:[0-9][0-9]\"" shots/blk.xml && echo "BLOCKED SCREEN CONTENT OK" || { echo "blocked screen content missing"; touch /tmp/lodestill_test_failed; }
+            adb shell cmd uimode night yes; sleep 4; adb exec-out screencap -p > shots/blocked_screen_dark.png; adb shell cmd uimode night no; sleep 3; adb shell uiautomator dump /sdcard/blk.xml; adb pull /sdcard/blk.xml shots/blk.xml || touch /tmp/lodestill_test_failed
             adb shell input tap $(python3 scripts/tapfind.py "Back to session" shots/blk.xml) || touch /tmp/lodestill_test_failed
             sleep 4
             FOCUS=$(adb shell dumpsys window | grep -E "mCurrentFocus"); echo "after Back to session: $FOCUS"; echo "$FOCUS" | grep -q "dev.joyal.lodestill.debug/dev.joyal.lodestill.MainActivity" || touch /tmp/lodestill_test_failed; adb exec-out screencap -p > shots/after_back_to_session.png
