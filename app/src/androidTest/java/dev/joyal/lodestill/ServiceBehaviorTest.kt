@@ -53,5 +53,9 @@ class ServiceBehaviorTest {
         vm.startSession(places.first().id, 25, null)
         delay(1_500) // would crash the process if setInterruptionFilter ran unauthorized
         vm.endEarly()
+        // endEarly is async; wait for the session to end and the service stop
+        // so a late stop cannot kill the next test's service.
+        withTimeout(10_000) { while (vm.current.value != null) delay(100) }
+        delay(1_500)
     }
 }

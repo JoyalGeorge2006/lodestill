@@ -65,20 +65,21 @@ class TimerService : Service() {
     private fun guardCheck() {
         val usm = getSystemService(UsageStatsManager::class.java) ?: return
         val now = System.currentTimeMillis()
-        val events = usm.queryEvents(now - 6_000, now)
+        // Walk the event stream: the foreground app is the last one that moved
+        // to foreground and has not since moved to background. This catches an
+        // app already open when the session started, and ignores stale history
+        // (an app that was used and then left is not foreground).
+        val events = usm.queryEvents(now - 2 * 60 * 60_000L, now)
         val e = UsageEvents.Event()
-        var foreground: String? = null
+        var pkg: String? = null
         while (events.hasNextEvent()) {
             events.getNextEvent(e)
-            if (e.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND) foreground = e.packageName
+            when (e.eventType) {
+                UsageEvents.Event.MOVE_TO_FOREGROUND -> pkg = e.packageName
+                UsageEvents.Event.MOVE_TO_BACKGROUND -> if (e.packageName == pkg) pkg = null
+            }
         }
-        // No fresh MOVE_TO_FOREGROUND in the window: fall back to the most
-        // recently used app, so an app already open when the session started
-        // (or a device that delays usage events) is still caught.
-        val pkg = foreground ?: run {
-            val stats = usm.queryUsageStats(UsageStatsManager.INTERVAL_BEST, now - 15_000, now)
-            stats?.filter { it.lastTimeUsed >= now - 15_000 }?.maxByOrNull { it.lastTimeUsed }?.packageName
-        } ?: return
+        if (pkg == null) { hideOverlay(); return }
         if (pkg == packageName) { hideOverlay(); return }
         // guardCheck only runs while a session is ACTIVE, so active=true here.
         if (!dev.joyal.lodestill.core.BlockRules.shouldAct(pkg, packageName,
