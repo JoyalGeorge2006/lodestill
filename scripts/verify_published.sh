@@ -56,6 +56,7 @@ adb shell uiautomator dump /sdcard/pq10.xml; adb pull /sdcard/pq10.xml pq10.xml
 grep -q 'text="Pause"' pq10.xml && grep -q 'text="End early"' pq10.xml && echo "DATA RETAINED: SESSION STILL ACTIVE AFTER UPGRADE" || fail "session lost after upgrade"
 adb shell screencap -p /sdcard/p_new_session.png
 tap_text "SETTINGS" pq11.xml || fail "settings2"
+adb shell input swipe 160 500 160 150 300; sleep 2; adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1; adb pull /sdcard/ui.xml pq11.xml >/dev/null 2>&1
 grep -q "1 selected" pq11.xml && echo "DATA RETAINED: 1 distracting app selected" || fail "blocked app lost"
 adb shell screencap -p /sdcard/p_new_settings.png
 adb shell input keyevent KEYCODE_HOME; sleep 2
