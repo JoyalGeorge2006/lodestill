@@ -39,13 +39,13 @@ fun SettingsScreen(vm: AppViewModel, nav: NavController) {
         HfCard {
             Text("Focus protection", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(8.dp))
-            HfSegmented(listOf("Off", "DND", "Guard", "Block"), settings.tier.coerceIn(0, 3)) { i ->
+            HfSegmented(listOf("Off", "DND", "Guard", "Block"), settings.tier.coerceIn(0, 3), onSelect = { i ->
                 when (i) {
                     3 -> showDisclosure = true
                     2 -> { vm.setTier(2); nav.navigate("permissions") }
                     else -> vm.setTier(i)
                 }
-            }
+            })
             Spacer(Modifier.height(8.dp))
             Text(when (settings.tier) {
                 1 -> "Do Not Disturb silences interruptions during sessions."
@@ -61,9 +61,9 @@ fun SettingsScreen(vm: AppViewModel, nav: NavController) {
             Text("Appearance", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(8.dp))
             HfSegmented(listOf("System", "Light", "Dark"),
-                listOf("system", "light", "dark").indexOf(settings.theme).coerceAtLeast(0)) { i ->
+                listOf("system", "light", "dark").indexOf(settings.theme).coerceAtLeast(0), onSelect = { i ->
                 vm.setTheme(listOf("system", "light", "dark")[i])
-            }
+            })
         }
         HfCard(onClick = { nav.navigate("distractions") }) {
             HfRow(title = "Distracting apps", sub = "Guard and Block act only on the apps you pick")
@@ -127,7 +127,7 @@ fun PermissionsScreen(vm: AppViewModel, navDistractions: () -> Unit) {
                 }) { Text("Open") }
             })
         }
-        HfCard(onClick = { nav.navigate("distractions") }) {
+        HfCard(onClick = navDistractions) {
             HfRow(title = "Distracting apps", sub = "Guard and Block act only on the apps you pick")
         }
         HfCard {

@@ -100,12 +100,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun pause() = act { s, t -> Engine.pause(s, t) }
     fun unpause() = act { s, t -> Engine.unpause(s, t) }
     fun resumeInterrupted() = act { s, t -> Engine.resume(s, t) }
-    fun endEarly() = act({ s, t -> Engine.endEarly(s, t, settings.value.finishWindowH) }, endService = true, dndOff = true)
+    fun endEarly() = act(endService = true, dndOff = true) { s, t -> Engine.endEarly(s, t, settings.value.finishWindowH) }
     fun setReason(reason: String) {
         val s = _current.value ?: return
         viewModelScope.launch { db.sessions().update(s.copy(reason = reason)) }
     }
-    private fun act(f: (FocusSession, Long) -> Engine.Result, endService: Boolean = false, dndOff: Boolean = false) {
+    private fun act(endService: Boolean = false, dndOff: Boolean = false, f: (FocusSession, Long) -> Engine.Result) {
         val s = _current.value ?: return
         viewModelScope.launch {
             val r = f(s, System.currentTimeMillis())

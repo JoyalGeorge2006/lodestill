@@ -169,8 +169,9 @@ fun TimerRing(progress: Float, label: String, sub: String, modifier: Modifier = 
                 Size(this.size.width - sw, this.size.height - sw), style = Stroke(sw, cap = androidx.compose.ui.graphics.StrokeCap.Round))
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(label, fontSize = 44.sp, fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface, fontFeatureSettings = "tnum")
+            Text(label, style = MaterialTheme.typography.displayMedium.copy(fontSize = 44.sp,
+                fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum"),
+                color = MaterialTheme.colorScheme.onSurface)
             Text(sub, style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
