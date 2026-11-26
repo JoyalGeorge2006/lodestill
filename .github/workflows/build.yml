@@ -1,0 +1,59 @@
+name: build
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: "8.9" }
+      - run: gradle :app:testDebugUnitTest --stacktrace
+  apk:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: "8.9" }
+      - run: gradle :app:assembleDebug --stacktrace
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lodestill-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+  emulator:
+    runs-on: ubuntu-latest
+    needs: apk
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: "8.9" }
+      - uses: ReactiveCircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          script: |
+            gradle :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
+            adb shell pm grant dev.joyal.lodestill.debug android.permission.POST_NOTIFICATIONS
+            adb shell appops set dev.joyal.lodestill.debug android:get_usage_stats allow
+            adb shell appops set dev.joyal.lodestill.debug SYSTEM_ALERT_WINDOW allow
+            adb shell settings put secure enabled_accessibility_services dev.joyal.lodestill.debug/dev.joyal.lodestill.service.BlockAccessibilityService
+            adb shell settings put secure accessibility_enabled 1
+            gradle :app:connectedDebugAndroidTest --stacktrace
+            adb shell am start -n dev.joyal.lodestill.debug/.MainActivity
+            sleep 8
+            mkdir -p shots
+            adb exec-out screencap -p > shots/today.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emulator-screenshots
+          path: shots/

@@ -1,0 +1,2 @@
+-keep class dev.joyal.hourfold.data.** { *; }
+-dontwarn org.bouncycastle.**

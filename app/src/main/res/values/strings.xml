@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Lodestill</string>
+    <string name="block_service_desc">During an active focus session, Lodestill notices when an app you chose as distracting opens and returns you to your session. It does not read screen content, messages or passwords. Emergency, calling and system navigation always stay reachable.</string>
+</resources>
