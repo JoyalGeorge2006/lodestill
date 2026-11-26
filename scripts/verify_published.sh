@@ -20,10 +20,13 @@ tap_text() {
 for n in 1 2 3 4 5 6; do
 adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
 adb pull /sdcard/ui.xml "$2" >/dev/null 2>&1
+cp "$2" "d_$n_$2" 2>/dev/null
 B=$(python3 scripts/tapfind.py "$1" "$2")
 echo "tap '$1' attempt $n coords: [$B]"
 if [ -n "$B" ]; then adb shell input tap $B; sleep 3; return 0; fi
-sleep 3
+sleep 2
+adb shell input swipe 160 500 160 150 300
+sleep 2
 done
 return 1
 }
