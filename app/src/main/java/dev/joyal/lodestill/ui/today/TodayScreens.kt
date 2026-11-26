@@ -99,7 +99,7 @@ fun TodayScreen(vm: AppViewModel, nav: NavController) {
                 MLabel((place?.name ?: "Place").uppercase(Locale.US))
                 LayerStack(layers, maxW = 400.dp, accentLast = true, modifier = Modifier.fillMaxWidth())
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("$layers layers", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("$layers ${if (layers == 1) "layer" else "layers"}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     MonoVal("\u2713 +1 today", color = LocalHf.current.ok)
                 }
             }
@@ -186,7 +186,7 @@ fun TodayScreen(vm: AppViewModel, nav: NavController) {
         }
     }
 
-    if (showStart) StartSheet(vm, places, placeIdEff, selMin, onPlace = { selPlace = it }, onMin = { selMin = it }) { showStart = false }
+    if (showStart && current == null && completed == null) StartSheet(vm, places, placeIdEff, selMin, onPlace = { selPlace = it }, onMin = { selMin = it }) { showStart = false }
     if (showEndEarly) {
         val kept = current?.accumulatedSec ?: 0
         HfDialog(onDismiss = { showEndEarly = false }) {

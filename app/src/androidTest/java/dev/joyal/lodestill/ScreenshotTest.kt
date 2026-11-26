@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -83,6 +84,6 @@ class ScreenshotTest {
         tryStep("09-places") { tap("PLACES"); shot("09-places") }
         tryStep("12-notes") { tap("NOTES"); shot("12-notes") }
         tryStep("13-settings") { tap("SETTINGS"); shot("13-settings") }
-        tryStep("14-permissions") { tap("Blocking and permissions"); shot("14-permissions") }
+        tryStep("14-permissions") { rule.onNodeWithText("Blocking and permissions").performScrollTo(); rule.waitForIdle(); tap("Blocking and permissions"); shot("14-permissions") }
     }
 }
