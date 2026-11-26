@@ -211,7 +211,7 @@ fun TimerRing(progress: Float, label: String, sub: String, modifier: Modifier = 
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(label, fontFamily = GeistMono, fontWeight = FontWeight.Medium, fontSize = 44.sp,
-                letterSpacing = (-1).sp, color = fg, fontFeatureSettings = "tnum")
+                letterSpacing = (-1).sp, color = fg)
             Text(sub.uppercase(Locale.US), fontFamily = GeistMono, fontWeight = FontWeight.Normal,
                 fontSize = 10.sp, letterSpacing = 1.2.sp, color = muted)
         }
