@@ -56,3 +56,20 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
+
+// connectedDebugAndroidTest reinstalls the app at suite start, and the
+// reinstall force-stops the package, which strips our accessibility service
+// from enabled_accessibility_services before any test runs. Re-enable it
+// after the install tasks and before the first test (i.e. before UiAutomation
+// is registered), matching the pre-suite path that provably binds.
+val enableLodestillA11yForTests = tasks.register("enableLodestillA11yForTests") {
+    mustRunAfter("installDebug", "installDebugAndroidTest")
+    doLast {
+        val adb = File(System.getenv("ANDROID_HOME") ?: "", "platform-tools/adb").absolutePath
+        exec { commandLine(adb, "shell", "settings", "put", "secure",
+            "enabled_accessibility_services",
+            "dev.joyal.lodestill.debug/dev.joyal.lodestill.service.BlockAccessibilityService") }
+        exec { commandLine(adb, "shell", "settings", "put", "secure", "accessibility_enabled", "1") }
+    }
+}
+tasks.named("connectedDebugAndroidTest") { dependsOn(enableLodestillA11yForTests) }

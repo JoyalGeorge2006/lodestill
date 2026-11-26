@@ -5,6 +5,9 @@ package dev.joyal.lodestill.service
 // components that cannot suspend-query on every event.
 object BlockState {
     @Volatile var active: Boolean = false
+    // True only while the accessibility service is actually bound; force-stopping
+    // the app strips it from the enabled list and this goes false.
+    @Volatile var connected: Boolean = false
     @Volatile var placeName: String = ""
     // Only apps the user explicitly picked as distracting. Guard and Block act
     // on this set and nothing else; an empty set means they act on nothing.

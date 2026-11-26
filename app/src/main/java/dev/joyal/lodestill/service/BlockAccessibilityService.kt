@@ -14,7 +14,13 @@ class BlockAccessibilityService : AccessibilityService() {
     private companion object { const val TAG = "BlockSvc" }
     override fun onServiceConnected() {
         super.onServiceConnected()
+        BlockState.connected = true
         Log.d(TAG, "connected pid=${android.os.Process.myPid()} proc=${android.app.Application.getProcessName()} pkg=$packageName")
+    }
+    override fun onUnbind(intent: Intent?): Boolean {
+        BlockState.connected = false
+        Log.d(TAG, "unbound: service disabled or app force-stopped")
+        return super.onUnbind(intent)
     }
     override fun onAccessibilityEvent(e: AccessibilityEvent?) {
         val pid = android.os.Process.myPid()

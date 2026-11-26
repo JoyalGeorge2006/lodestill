@@ -55,7 +55,17 @@ class LiveBlockingTest {
         val svc = "$own/dev.joyal.lodestill.service.BlockAccessibilityService"
         device.executeShellCommand("settings put secure enabled_accessibility_services $svc")
         device.executeShellCommand("settings put secure accessibility_enabled 1")
-        delay(2_000) // bind + onServiceConnected
+        // Verify the enablement actually took effect (component in the enabled
+        // list + master switch on) before relying on the service in tests.
+        withTimeout(15_000) {
+            while (true) {
+                val enabled = device.executeShellCommand("settings get secure enabled_accessibility_services")
+                val master = device.executeShellCommand("settings get secure accessibility_enabled").trim()
+                if (enabled.contains("BlockAccessibilityService") && master == "1") break
+                delay(500)
+            }
+        }
+        delay(2_000) // bind + onServiceConnected; logcat proves the bind via BlockSvc "connected
     }
 
     @After fun reset() = runBlocking {
