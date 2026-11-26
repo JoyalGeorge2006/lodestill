@@ -126,7 +126,7 @@ class BlockedActivity : ComponentActivity() {
         val s = session() ?: return
         val st = runBlocking { Prefs.flow(this@BlockedActivity).first() }
         val r = Engine.onForeground(s, System.currentTimeMillis(), st.graceSec, st.finishWindowH)
-        if (r.event != "none") runBlocking { HfDb.get(this).sessions().update(r.s) }
+        if (r.event != "none") runBlocking { HfDb.get(this@BlockedActivity).sessions().update(r.s) }
     }
 
     override fun onStop() {
