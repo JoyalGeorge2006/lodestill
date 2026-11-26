@@ -31,32 +31,32 @@ done
 return 1
 }
 adb shell monkey -p $P -c android.intent.category.LAUNCHER 1; sleep 8
-tap_text "SETTINGS" q1.xml || fail "settings"
-tap_text "Block" q2.xml || fail "block seg"
-tap_text "I understand, continue" q3.xml || fail "disclosure"
+tap_text "SETTINGS" pq1.xml || fail "settings"
+tap_text "BLOCK" pq2.xml || fail "block seg"
+tap_text "I understand, continue" pq3.xml || fail "disclosure"
 adb shell input keyevent KEYCODE_BACK; sleep 3
-tap_text "Distracting apps" q4.xml || fail "distracting"
-tap_text "Clock" q5.xml || fail "pick clock"
+tap_text "Distracting apps" pq4.xml || fail "distracting"
+tap_text "Clock" pq5.xml || fail "pick clock"
 adb shell screencap -p /sdcard/p_old_apps.png
 adb shell input keyevent KEYCODE_BACK; sleep 3
 adb shell screencap -p /sdcard/p_old_settings.png
-tap_text "TODAY" q6.xml || fail "today"
-tap_text "Start a session" q7.xml || fail "start"
-tap_text "Begin" q8.xml || fail "begin"
+tap_text "TODAY" pq6.xml || fail "today"
+tap_text "Start a session" pq7.xml || fail "start"
+tap_text "Begin" pq8.xml || fail "begin"
 sleep 3
-adb shell uiautomator dump /sdcard/q9.xml; adb pull /sdcard/q9.xml q9.xml
-grep -q 'text="Pause"' q9.xml && echo "OLD v0.2.0: SESSION ACTIVE" || fail "old session not active"
+adb shell uiautomator dump /sdcard/pq9.xml; adb pull /sdcard/pq9.xml pq9.xml
+grep -q 'text="Pause"' pq9.xml && echo "OLD v0.2.0: SESSION ACTIVE" || fail "old session not active"
 adb shell screencap -p /sdcard/p_old_session.png
 adb install -r new.apk && echo "UPGRADE INSTALL OVER v0.2.0 OK" || fail "upgrade install"
 adb shell dumpsys package $P | grep versionName
 adb shell settings put secure enabled_accessibility_services $P/$P.service.BlockAccessibilityService
 adb shell settings put secure accessibility_enabled 1
 adb shell monkey -p $P -c android.intent.category.LAUNCHER 1; sleep 8
-adb shell uiautomator dump /sdcard/q10.xml; adb pull /sdcard/q10.xml q10.xml
-grep -q 'text="Pause"' q10.xml && grep -q 'text="End early"' q10.xml && echo "DATA RETAINED: SESSION STILL ACTIVE AFTER UPGRADE" || fail "session lost after upgrade"
+adb shell uiautomator dump /sdcard/pq10.xml; adb pull /sdcard/pq10.xml pq10.xml
+grep -q 'text="Pause"' pq10.xml && grep -q 'text="End early"' pq10.xml && echo "DATA RETAINED: SESSION STILL ACTIVE AFTER UPGRADE" || fail "session lost after upgrade"
 adb shell screencap -p /sdcard/p_new_session.png
-tap_text "SETTINGS" q11.xml || fail "settings2"
-grep -q "1 selected" q11.xml && echo "DATA RETAINED: 1 distracting app selected" || fail "blocked app lost"
+tap_text "SETTINGS" pq11.xml || fail "settings2"
+grep -q "1 selected" pq11.xml && echo "DATA RETAINED: 1 distracting app selected" || fail "blocked app lost"
 adb shell screencap -p /sdcard/p_new_settings.png
 adb shell input keyevent KEYCODE_HOME; sleep 2
 adb shell settings get secure enabled_accessibility_services
@@ -65,9 +65,9 @@ adb shell monkey -p com.google.android.deskclock -c android.intent.category.LAUN
 FOCUS=$(adb shell dumpsys window | grep -E "mCurrentFocus"); echo "blocked focus: $FOCUS"
 echo "$FOCUS" | grep -q "$P/$P.BlockedActivity" && echo "BLOCKED SCREEN SHOWN (signed v0.3.0)" || fail "no blocked screen"
 adb shell screencap -p /sdcard/p_blocked.png
-adb shell uiautomator dump /sdcard/q12.xml; adb pull /sdcard/q12.xml q12.xml
-grep -q "Clock is blocked" q12.xml && grep -q "Back to session" q12.xml && grep -q "TIME REMAINING" q12.xml && echo "BLOCKED SCREEN CONTENT OK" || fail "blocked content"
-adb shell input tap $(python3 scripts/tapfind.py "Back to session" q12.xml)
+adb shell uiautomator dump /sdcard/pq12.xml; adb pull /sdcard/pq12.xml pq12.xml
+grep -q "Clock is blocked" pq12.xml && grep -q "Back to session" pq12.xml && grep -q "TIME REMAINING" pq12.xml && echo "BLOCKED SCREEN CONTENT OK" || fail "blocked content"
+adb shell input tap $(python3 scripts/tapfind.py "Back to session" pq12.xml)
 sleep 4
 FOCUS=$(adb shell dumpsys window | grep -E "mCurrentFocus"); echo "after Back to session: $FOCUS"
 echo "$FOCUS" | grep -q "$P/$P.MainActivity" && echo "BACK TO SESSION OK" || fail "back to session"
