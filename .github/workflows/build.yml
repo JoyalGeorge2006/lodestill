@@ -11,7 +11,7 @@ jobs:
         with: { distribution: temurin, java-version: 17 }
       - uses: gradle/actions/setup-gradle@v4
         with: { gradle-version: "8.9" }
-      - run: gradle :app:testDebugUnitTest --stacktrace
+      - run: gradle :app:testDebugUnitTest :app:compileDebugAndroidTestKotlin --stacktrace
   apk:
     runs-on: ubuntu-latest
     needs: test
