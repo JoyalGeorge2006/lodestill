@@ -26,11 +26,6 @@ fun TodayScreen(vm: AppViewModel, nav: NavController) {
     val settings by vm.settings.collectAsState()
     var showStart by remember { mutableStateOf(false) }
     var showEndEarly by remember { mutableStateOf(false) }
-    val ctx = androidx.compose.ui.platform.LocalContext.current
-    var a11yOn by remember { mutableStateOf(vm.isAccessibilityOn()) }
-    LaunchedEffect(Unit) {
-        while (true) { a11yOn = vm.isAccessibilityOn(); kotlinx.coroutines.delay(2_000) }
-    }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -77,13 +72,6 @@ fun TodayScreen(vm: AppViewModel, nav: NavController) {
                     Text("Leave the app? You have ${settings.graceSec} seconds to come back before the layer becomes scaffolding.",
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-                    if (settings.tier == 3 && !a11yOn) {
-                        Spacer(Modifier.height(8.dp))
-                        Text("Block is off: the accessibility service is disabled. This can happen after force-stopping Lodestill.",
-                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error,
-                            textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-                        TextButton(onClick = { ctx.startActivity(vm.accessibilitySettingsIntent()) }) { Text("Re-enable Block") }
-                    }
                 }
                 "PAUSED" -> HfCard {
                     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {

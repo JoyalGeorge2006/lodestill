@@ -15,12 +15,27 @@ android {
         versionName = "0.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+    // Keystore is injected by CI from repo secrets for release builds; it is
+    // never committed. Debug/local builds skip signing config when absent.
+    val releaseStoreFile = rootProject.file("lodestill-release.jks")
+    signingConfigs {
+        create("release") {
+            storeFile = releaseStoreFile
+            storePassword = System.getenv("LODESTILL_STORE_PASSWORD") ?: ""
+            keyAlias = System.getenv("LODESTILL_KEY_ALIAS") ?: "lodestill"
+            keyPassword = System.getenv("LODESTILL_KEY_PASSWORD") ?: ""
+        }
+    }
     buildTypes {
         debug { applicationIdSuffix = ".debug"; versionNameSuffix = "-debug" }
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // Test release ships the same bytecode the device suite verified;
+            // R8/proguard stays off until a dedicated optimization pass.
+            isMinifyEnabled = false
+            isShrinkResources = false
+            if (releaseStoreFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
     compileOptions {
