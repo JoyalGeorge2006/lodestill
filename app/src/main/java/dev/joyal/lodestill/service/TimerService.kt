@@ -71,14 +71,17 @@ class TimerService : Service() {
         // (an app that was used and then left is not foreground).
         val events = usm.queryEvents(now - 2 * 60 * 60_000L, now)
         val e = UsageEvents.Event()
-        var pkg: String? = null
+        val list = mutableListOf<Pair<dev.joyal.lodestill.core.Foreground.Kind, String>>()
         while (events.hasNextEvent()) {
             events.getNextEvent(e)
-            when (e.eventType) {
-                UsageEvents.Event.MOVE_TO_FOREGROUND -> pkg = e.packageName
-                UsageEvents.Event.MOVE_TO_BACKGROUND -> if (e.packageName == pkg) pkg = null
+            val k = when (e.eventType) {
+                UsageEvents.Event.MOVE_TO_FOREGROUND -> dev.joyal.lodestill.core.Foreground.Kind.FOREGROUND
+                UsageEvents.Event.MOVE_TO_BACKGROUND -> dev.joyal.lodestill.core.Foreground.Kind.BACKGROUND
+                else -> dev.joyal.lodestill.core.Foreground.Kind.OTHER
             }
+            list.add(k to e.packageName)
         }
+        val pkg = dev.joyal.lodestill.core.Foreground.resolve(list)
         if (pkg == null) { hideOverlay(); return }
         if (pkg == packageName) { hideOverlay(); return }
         // guardCheck only runs while a session is ACTIVE, so active=true here.
