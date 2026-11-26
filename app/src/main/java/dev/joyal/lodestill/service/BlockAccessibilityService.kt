@@ -12,12 +12,18 @@ import dev.joyal.lodestill.MainActivity
 class BlockAccessibilityService : AccessibilityService() {
     private var lastActionAt = 0L
     private companion object { const val TAG = "BlockSvc" }
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+        Log.d(TAG, "connected pid=${android.os.Process.myPid()} proc=${android.app.Application.getProcessName()} pkg=$packageName")
+    }
     override fun onAccessibilityEvent(e: AccessibilityEvent?) {
-        if (e == null || !BlockState.active) return
+        val pid = android.os.Process.myPid()
+        if (e == null) { Log.d(TAG, "null event pid=$pid"); return }
+        val pkg = e.packageName?.toString() ?: "?"
+        Log.d(TAG, "event type=${e.eventType} pkg=$pkg active=${BlockState.active} blocked=${BlockState.blocked.size} pid=$pid")
+        if (!BlockState.active) return
         if (e.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
-        val pkg = e.packageName?.toString() ?: return
         if (pkg == packageName) return
-        Log.d(TAG, "window event pkg=$pkg active=${BlockState.active} blocked=${BlockState.blocked.size}")
         if (!dev.joyal.lodestill.core.BlockRules.shouldAct(pkg, packageName,
                 BlockState.active, BlockState.blocked, BlockState.IGNORE)) return
         val now = System.currentTimeMillis()
@@ -27,5 +33,5 @@ class BlockAccessibilityService : AccessibilityService() {
         performGlobalAction(GLOBAL_ACTION_BACK)
         startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
-    override fun onInterrupt() {}
+    override fun onInterrupt() { Log.d(TAG, "interrupted") }
 }

@@ -73,6 +73,8 @@ jobs:
             sleep 8
             OUT=$(adb shell am instrument -w -e class dev.joyal.lodestill.ProcessDeathVerifyTest dev.joyal.lodestill.debug.test/androidx.test.runner.AndroidJUnitRunner 2>&1); echo "$OUT"; echo "$OUT" | grep -q "OK (" || touch /tmp/lodestill_test_failed
             adb logcat -d > testxml/logcat.txt
+            adb shell dumpsys accessibility > testxml/dumpsys-accessibility.txt 2>&1 || true
+            adb shell settings get secure enabled_accessibility_services > testxml/enabled-a11y-services.txt 2>&1 || true
             mkdir -p shots
             adb shell monkey -p dev.joyal.lodestill.debug -c android.intent.category.LAUNCHER 1 || touch /tmp/lodestill_test_failed
             sleep 8
