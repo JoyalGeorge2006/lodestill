@@ -28,7 +28,7 @@ class BlockScenarioSetupTest {
 
     @Test fun startTier3SessionWithSelectedApp() = runBlocking {
         TestReset.all(app)
-        val selected = instr.arguments.getString("selected")
+        val selected = InstrumentationRegistry.getArguments().getString("selected")
             ?: "com.google.android.deskclock"
         val vm = AppViewModel(app)
         val places = withTimeout(10_000) { vm.places.first { it.isNotEmpty() } }
