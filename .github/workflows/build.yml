@@ -57,18 +57,24 @@ jobs:
             rm -f /tmp/lodestill_test_failed
             gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.notClass=dev.joyal.lodestill.ProcessDeathSetupTest,dev.joyal.lodestill.ProcessDeathVerifyTest --stacktrace || touch /tmp/lodestill_test_failed
             mkdir -p testxml && cp -r app/build/outputs/androidTest-results/connected testxml/main
-            gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=dev.joyal.lodestill.ProcessDeathSetupTest --stacktrace || touch /tmp/lodestill_test_failed
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
+            adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+            adb shell pm grant dev.joyal.lodestill.debug android.permission.POST_NOTIFICATIONS
+            adb shell appops set dev.joyal.lodestill.debug android:get_usage_stats allow
+            adb shell appops set dev.joyal.lodestill.debug SYSTEM_ALERT_WINDOW allow
+            adb shell settings put secure enabled_accessibility_services dev.joyal.lodestill.debug/dev.joyal.lodestill.service.BlockAccessibilityService
+            adb shell settings put secure accessibility_enabled 1
+            adb shell pm list packages | grep dev.joyal.lodestill
+            OUT=$(adb shell am instrument -w -e class dev.joyal.lodestill.ProcessDeathSetupTest dev.joyal.lodestill.debug.test/androidx.test.runner.AndroidJUnitRunner 2>&1); echo "$OUT"; echo "$OUT" | grep -q "OK (" || touch /tmp/lodestill_test_failed
             adb shell input keyevent KEYCODE_HOME
             adb shell am force-stop dev.joyal.lodestill.debug
             sleep 3
-            adb shell cmd package resolve-activity --brief dev.joyal.lodestill.debug
-            adb shell monkey -p dev.joyal.lodestill.debug -c android.intent.category.LAUNCHER 1
+            adb shell monkey -p dev.joyal.lodestill.debug -c android.intent.category.LAUNCHER 1 || touch /tmp/lodestill_test_failed
             sleep 8
-            gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=dev.joyal.lodestill.ProcessDeathVerifyTest --stacktrace || touch /tmp/lodestill_test_failed
-            cp -r app/build/outputs/androidTest-results/connected testxml/verify
+            OUT=$(adb shell am instrument -w -e class dev.joyal.lodestill.ProcessDeathVerifyTest dev.joyal.lodestill.debug.test/androidx.test.runner.AndroidJUnitRunner 2>&1); echo "$OUT"; echo "$OUT" | grep -q "OK (" || touch /tmp/lodestill_test_failed
             adb logcat -d > testxml/logcat.txt
             mkdir -p shots
-            adb shell monkey -p dev.joyal.lodestill.debug -c android.intent.category.LAUNCHER 1
+            adb shell monkey -p dev.joyal.lodestill.debug -c android.intent.category.LAUNCHER 1 || touch /tmp/lodestill_test_failed
             sleep 8
             adb exec-out screencap -p > shots/app_light.png
             adb shell input keyevent KEYCODE_HOME
@@ -79,7 +85,7 @@ jobs:
             adb shell cmd uimode night yes
             sleep 3
             adb exec-out screencap -p > shots/launcher_dark.png
-            adb shell monkey -p dev.joyal.lodestill.debug -c android.intent.category.LAUNCHER 1
+            adb shell monkey -p dev.joyal.lodestill.debug -c android.intent.category.LAUNCHER 1 || touch /tmp/lodestill_test_failed
             sleep 5
             adb exec-out screencap -p > shots/app_dark.png
             adb shell cmd uimode night no

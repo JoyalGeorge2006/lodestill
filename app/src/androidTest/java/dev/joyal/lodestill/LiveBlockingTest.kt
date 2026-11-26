@@ -51,6 +51,7 @@ class LiveBlockingTest {
         HfDb.get(app).blockedApps().all().first().forEach { HfDb.get(app).blockedApps().delete(it.packageName) }
         BlockState.active = false; BlockState.blocked = emptySet()
         device.pressHome()
+        Unit
     }
 
     @Test fun guardOverlayOnSelectedAppOnlyAndOptOutStopsIt() = runBlocking {
@@ -87,6 +88,7 @@ class LiveBlockingTest {
 
         vm.endEarly()
         device.pressHome()
+        Unit
     }
 
     @Test fun blockReturnsFromSelectedAppOnly() = runBlocking {
@@ -126,5 +128,6 @@ class LiveBlockingTest {
 
         vm.endEarly()
         device.pressHome()
+        Unit
     }
 }
