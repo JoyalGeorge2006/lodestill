@@ -31,8 +31,19 @@ class ButtonsTest {
         try { rule.waitForIdle(); f(); rule.waitForIdle() }
         catch (e: Throwable) { failures.add("$name: ${e.message?.take(120)}") }
     }
-    private fun tap(t: String) { rule.onNodeWithText(t).performClick(); rule.waitForIdle() }
-    private fun shown(t: String) { rule.onNodeWithText(t).assertIsDisplayed() }
+    private fun await(t: String) {
+        rule.waitUntil(8_000) { rule.onAllNodesWithText(t).fetchSemanticsNodes().isNotEmpty() }
+    }
+    private fun tap(t: String) {
+        await(t)
+        runCatching { rule.onAllNodesWithText(t).onFirst().performScrollTo() }
+        rule.onAllNodesWithText(t).onFirst().performClick(); rule.waitForIdle()
+    }
+    private fun shown(t: String) {
+        await(t)
+        runCatching { rule.onAllNodesWithText(t).onFirst().performScrollTo() }
+        rule.onAllNodesWithText(t).onFirst().assertIsDisplayed()
+    }
     private fun type(text: String) {
         rule.onAllNodes(hasSetTextAction()).onLast().performTextInput(text); rule.waitForIdle() }
 
@@ -82,8 +93,9 @@ class ButtonsTest {
             tap("SETTINGS"); shown("APPEARANCE"); tap("Light".uppercase()); tap("Dark".uppercase()) }
         step("settings-length") { tap("60M"); }
         step("settings-dnd-switch") {
-            rule.onNode(hasAnyAncestor(hasText("Do Not Disturb")).and(isToggleable())).performClick()
-            rule.onNode(hasAnyAncestor(hasText("Do Not Disturb")).and(isToggleable())).performClick() }
+            await("Do Not Disturb"); rule.onAllNodesWithText("Do Not Disturb").onFirst().performScrollTo()
+            rule.onAllNodes(isToggleable()).onFirst().performClick(); rule.waitForIdle()
+            rule.onAllNodes(isToggleable()).onFirst().performClick() }
         step("tier-dnd") { tap("DND") }
         step("tier-guard-navigates") { tap("GUARD"); shown("PERMISSIONS"); tap("\u2039 Back") }
         step("tier-block-disclosure-cancel") { tap("BLOCK"); shown("WHAT IT NEVER DOES"); tap("Not now") }
