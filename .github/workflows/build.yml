@@ -56,15 +56,19 @@ jobs:
             adb shell settings put secure accessibility_enabled 1
             rm -f /tmp/lodestill_test_failed
             gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.notClass=dev.joyal.lodestill.ProcessDeathSetupTest,dev.joyal.lodestill.ProcessDeathVerifyTest --stacktrace || touch /tmp/lodestill_test_failed
+            mkdir -p testxml && cp -r app/build/outputs/androidTest-results/connected testxml/main
             gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=dev.joyal.lodestill.ProcessDeathSetupTest --stacktrace || touch /tmp/lodestill_test_failed
             adb shell input keyevent KEYCODE_HOME
             adb shell am force-stop dev.joyal.lodestill.debug
             sleep 3
-            adb shell am start -n dev.joyal.lodestill.debug/dev.joyal.lodestill.MainActivity
+            adb shell cmd package resolve-activity --brief dev.joyal.lodestill.debug
+            adb shell monkey -p dev.joyal.lodestill.debug -c android.intent.category.LAUNCHER 1
             sleep 8
             gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=dev.joyal.lodestill.ProcessDeathVerifyTest --stacktrace || touch /tmp/lodestill_test_failed
+            cp -r app/build/outputs/androidTest-results/connected testxml/verify
+            adb logcat -d > testxml/logcat.txt
             mkdir -p shots
-            adb shell am start -n dev.joyal.lodestill.debug/dev.joyal.lodestill.MainActivity
+            adb shell monkey -p dev.joyal.lodestill.debug -c android.intent.category.LAUNCHER 1
             sleep 8
             adb exec-out screencap -p > shots/app_light.png
             adb shell input keyevent KEYCODE_HOME
@@ -75,7 +79,7 @@ jobs:
             adb shell cmd uimode night yes
             sleep 3
             adb exec-out screencap -p > shots/launcher_dark.png
-            adb shell am start -n dev.joyal.lodestill.debug/dev.joyal.lodestill.MainActivity
+            adb shell monkey -p dev.joyal.lodestill.debug -c android.intent.category.LAUNCHER 1
             sleep 5
             adb exec-out screencap -p > shots/app_dark.png
             adb shell cmd uimode night no
@@ -89,4 +93,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: android-test-results
-          path: app/build/outputs/androidTest-results/
+          path: testxml/
