@@ -107,6 +107,9 @@ class TimerService : Service() {
 
     override fun onStartCommand(i: Intent?, f: Int, st: Int): Int {
         sessionId = i?.getLongExtra("session", -1) ?: -1
+        // Foreground must be declared within a few seconds of
+        // startForegroundService(), before any database work in the tick.
+        startForeground(1, buildNotif("Focusing"))
         handler.removeCallbacks(tick); handler.post(tick)
         return START_STICKY
     }
