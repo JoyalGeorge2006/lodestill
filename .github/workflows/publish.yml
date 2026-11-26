@@ -1,53 +1,49 @@
 name: publish
-# Manual only. Publishes the already signed and device-verified APK from a
-# build run. Nothing is public until this workflow is dispatched.
+# Pushing a tag named publish/<release tag> is the act that publishes. It only
+# succeeds for a commit whose signed build and emulator verification are green.
 on:
-  workflow_dispatch:
-    inputs:
-      run_id:
-        description: "build run id (dispatch run with sign + release-verify green)"
-        required: true
-      tag:
-        description: "release tag, e.g. v0.2.0-amoled"
-        required: true
+  push:
+    tags: ["publish/*"]
 jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
       contents: write
       actions: read
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Require green signing and device verification on that run
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Resolve release tag and the verified build run for this commit
         run: |
-          RUN=${{ inputs.run_id }}
-          gh api repos/${{ github.repository }}/actions/runs/$RUN/jobs --jq '.jobs[]|"\(.name) \(.conclusion)"'
+          REL="${GITHUB_REF_NAME#publish/}"
+          echo "REL=$REL" >> $GITHUB_ENV
+          RUN=$(gh api "repos/${{ github.repository }}/actions/workflows/build.yml/runs?head_sha=${GITHUB_SHA}&branch=release-candidate&status=success" --jq '.workflow_runs[0].id')
+          [ -n "$RUN" ] && [ "$RUN" != "null" ] || { echo "no successful release-candidate build for $GITHUB_SHA, refusing to publish"; exit 1; }
+          echo "RUN=$RUN" >> $GITHUB_ENV
           for J in test apk emulator sign release-verify; do
             C=$(gh api repos/${{ github.repository }}/actions/runs/$RUN/jobs --jq ".jobs[]|select(.name==\"$J\")|.conclusion")
             [ "$C" = "success" ] || { echo "job $J is '$C', refusing to publish"; exit 1; }
           done
-          gh api repos/${{ github.repository }}/actions/runs/$RUN --jq .head_sha > sha.txt
+          echo "verified build run $RUN for $GITHUB_SHA, publishing $REL"
       - uses: actions/download-artifact@v4
         with:
           name: lodestill-release-apk
-          run-id: ${{ inputs.run_id }}
+          run-id: ${{ env.RUN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check the artifact hash matches the recorded one
         run: |
           APK=$(find . -name app-release.apk | head -1)
-          sha256sum "$APK"; cat $(find . -name release-sha256.txt | head -1)
-          [ "$(sha256sum "$APK" | cut -d' ' -f1)" = "$(cut -d' ' -f1 $(find . -name release-sha256.txt | head -1))" ]
-          cp "$APK" "Lodestill-${{ inputs.tag }}.apk"
+          REC=$(find . -name release-sha256.txt | head -1)
+          sha256sum "$APK"; cat "$REC"
+          [ "$(sha256sum "$APK" | cut -d' ' -f1)" = "$(cut -d' ' -f1 "$REC")" ]
+          cp "$APK" "Lodestill-${REL}.apk"
       - name: Create prerelease with the verified APK
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${{ inputs.tag }}" "Lodestill-${{ inputs.tag }}.apk" --repo ${{ github.repository }} --target "$(cat sha.txt)" --title "Lodestill ${{ inputs.tag }}" --prerelease --notes "Signed test build of Lodestill. First install only. Emulator-tested; not tested on a real phone."
+          gh release create "$REL" "Lodestill-${REL}.apk" --repo ${{ github.repository }} --target "$GITHUB_SHA" --title "Lodestill ${REL}" --prerelease --notes "Signed test build of Lodestill. First install only. Emulator-tested; not tested on a real phone."
       - name: Verify public URL serves the identical APK
         run: |
-          URL="https://github.com/${{ github.repository }}/releases/download/${{ inputs.tag }}/Lodestill-${{ inputs.tag }}.apk"
+          URL="https://github.com/${{ github.repository }}/releases/download/${REL}/Lodestill-${REL}.apk"
           curl -sL "$URL" -o /tmp/public.apk
-          PUB=$(sha256sum /tmp/public.apk | cut -d' ' -f1); LOCAL=$(sha256sum Lodestill-${{ inputs.tag }}.apk | cut -d' ' -f1)
+          PUB=$(sha256sum /tmp/public.apk | cut -d' ' -f1); LOCAL=$(sha256sum Lodestill-${REL}.apk | cut -d' ' -f1)
           echo "public $PUB"; echo "local  $LOCAL"
           [ "$PUB" = "$LOCAL" ] && echo "PUBLIC URL HASH MATCH: $URL"
