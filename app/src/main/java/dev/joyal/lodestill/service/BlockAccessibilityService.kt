@@ -34,8 +34,8 @@ class BlockAccessibilityService : AccessibilityService() {
         val now = System.currentTimeMillis()
         if (now - lastActionAt < 1500) return
         lastActionAt = now
-        Log.d(TAG, "acting on $pkg: back + blocked screen")
-        performGlobalAction(GLOBAL_ACTION_BACK)
+        Log.d(TAG, "acting on $pkg: blocked screen")
+        // No BACK action: it is delivered late and would dismiss the blocked screen itself.
         startActivity(dev.joyal.lodestill.BlockedActivity.intent(this, pkg))
     }
     override fun onInterrupt() { Log.d(TAG, "interrupted") }
