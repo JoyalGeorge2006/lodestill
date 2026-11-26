@@ -30,7 +30,7 @@ class LiveBlockingTest {
     private val instr = InstrumentationRegistry.getInstrumentation()
     private val ctx = instr.targetContext
     private val app = ctx.applicationContext as Application
-    private val device = UiDevice.getInstance(instr)
+    private val device by lazy { UiDevice.getInstance(instr) }
     private val own = ctx.packageName
 
     private fun launchableApps(): List<String> {

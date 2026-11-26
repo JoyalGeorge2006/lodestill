@@ -54,34 +54,39 @@ jobs:
             adb shell appops set dev.joyal.lodestill.debug SYSTEM_ALERT_WINDOW allow
             adb shell settings put secure enabled_accessibility_services dev.joyal.lodestill.debug/dev.joyal.lodestill.service.BlockAccessibilityService
             adb shell settings put secure accessibility_enabled 1
-            TEST_RC=0
-            gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.notClass=dev.joyal.lodestill.ProcessDeathSetupTest,dev.joyal.lodestill.ProcessDeathVerifyTest --stacktrace || TEST_RC=$?
-            gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=dev.joyal.lodestill.ProcessDeathSetupTest --stacktrace || TEST_RC=$?
+            rm -f /tmp/lodestill_test_failed
+            gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.notClass=dev.joyal.lodestill.ProcessDeathSetupTest,dev.joyal.lodestill.ProcessDeathVerifyTest --stacktrace || touch /tmp/lodestill_test_failed
+            gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=dev.joyal.lodestill.ProcessDeathSetupTest --stacktrace || touch /tmp/lodestill_test_failed
             adb shell input keyevent KEYCODE_HOME
             adb shell am force-stop dev.joyal.lodestill.debug
             sleep 3
-            adb shell am start -n dev.joyal.lodestill.debug/.MainActivity
+            adb shell am start -n dev.joyal.lodestill.debug/dev.joyal.lodestill.MainActivity
             sleep 8
-            gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=dev.joyal.lodestill.ProcessDeathVerifyTest --stacktrace || TEST_RC=$?
+            gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=dev.joyal.lodestill.ProcessDeathVerifyTest --stacktrace || touch /tmp/lodestill_test_failed
             mkdir -p shots
-            adb shell am start -n dev.joyal.lodestill.debug/.MainActivity
+            adb shell am start -n dev.joyal.lodestill.debug/dev.joyal.lodestill.MainActivity
             sleep 8
             adb exec-out screencap -p > shots/app_light.png
             adb shell input keyevent KEYCODE_HOME
             sleep 2
-            adb shell input swipe 540 1800 540 900 400
+            S=$(adb shell wm size | awk '{print $3}'); W=${S%x*}; H=${S#*x}; adb shell input swipe $((W/2)) $((H*4/5)) $((W/2)) $((H/3)) 400
             sleep 3
             adb exec-out screencap -p > shots/launcher_light.png
             adb shell cmd uimode night yes
             sleep 3
             adb exec-out screencap -p > shots/launcher_dark.png
-            adb shell am start -n dev.joyal.lodestill.debug/.MainActivity
+            adb shell am start -n dev.joyal.lodestill.debug/dev.joyal.lodestill.MainActivity
             sleep 5
             adb exec-out screencap -p > shots/app_dark.png
             adb shell cmd uimode night no
-            exit $TEST_RC
+            if [ -f /tmp/lodestill_test_failed ]; then echo "device tests FAILED"; exit 1; fi
       - if: always()
         uses: actions/upload-artifact@v4
         with:
           name: emulator-screenshots
           path: shots/
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-test-results
+          path: app/build/outputs/androidTest-results/
