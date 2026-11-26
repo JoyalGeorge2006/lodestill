@@ -25,6 +25,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val current: StateFlow<FocusSession?> = _current
     private val _now = MutableStateFlow(System.currentTimeMillis())
     val now: StateFlow<Long> = _now
+    // Keep-screen-on timer mode (opt-in, in-app only; not the system always-on display)
+    private val _timerOnly = MutableStateFlow(false)
+    val timerOnly: StateFlow<Boolean> = _timerOnly
+    fun setTimerOnly(v: Boolean) { _timerOnly.value = v }
     private var ticker: Job? = null
     private var serviceStartedFor: Long = -1
 

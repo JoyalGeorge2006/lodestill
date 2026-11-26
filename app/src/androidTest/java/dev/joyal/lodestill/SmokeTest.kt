@@ -20,16 +20,16 @@ class SmokeTest {
     }
 
     @Test fun todayShowsAndStartSheetOpens() {
-        rule.onAllNodesWithText("Today")[0].assertIsDisplayed()
+        rule.onAllNodesWithText("TODAY")[0].assertIsDisplayed()
         rule.onNodeWithText("Start a session").assertIsDisplayed()
         rule.onNodeWithText("Start a session").performClick()
         rule.onNodeWithText("Begin").assertIsDisplayed()
     }
 
     @Test fun settingsShowsTiers() {
-        rule.onNodeWithText("Settings").performClick()
-        rule.onNodeWithText("Focus protection").assertIsDisplayed()
-        rule.onNodeWithText("Guard").assertIsDisplayed()
-        rule.onNodeWithText("Block").assertIsDisplayed()
+        rule.onNodeWithText("SETTINGS").performClick()
+        rule.onNodeWithText("FOCUS PROTECTION").assertIsDisplayed()
+        rule.onNodeWithText("GUARD").assertIsDisplayed()
+        rule.onNodeWithText("BLOCK").assertIsDisplayed()
     }
 }

@@ -26,6 +26,13 @@ class MainActivity : ComponentActivity() {
             val dark = when (settings.theme) {
                 "light" -> false; "dark" -> true; else -> isSystemInDarkTheme()
             }
+            androidx.compose.runtime.LaunchedEffect(dark) {
+                enableEdgeToEdge(
+                    statusBarStyle = if (dark) androidx.activity.SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                        else androidx.activity.SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
+                    navigationBarStyle = if (dark) androidx.activity.SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                        else androidx.activity.SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT))
+            }
             LodestillTheme(dark = dark) {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { HfNav(v) }
             }

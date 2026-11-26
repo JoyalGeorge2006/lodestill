@@ -1,7 +1,9 @@
 package dev.joyal.lodestill.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -10,9 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -20,52 +20,78 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.joyal.lodestill.ui.theme.GeistMono
+import dev.joyal.lodestill.ui.theme.GeistSans
 import dev.joyal.lodestill.ui.theme.LocalHf
+import java.util.Locale
+
+// Monospace uppercase eyebrow (Geist Mono 10sp, tracked, secondary color)
+@Composable
+fun Eyebrow(text: String, modifier: Modifier = Modifier, color: Color = MaterialTheme.colorScheme.onSurfaceVariant) {
+    Text(text.uppercase(Locale.US), modifier = modifier, fontFamily = GeistMono,
+        fontWeight = FontWeight.Normal, fontSize = 10.sp, letterSpacing = 0.8.sp, color = color)
+}
+
+// Mono section label inside cards (muted). Pass already-uppercase text; never
+// transform case here because UI tests match some of these strings.
+@Composable
+fun MLabel(text: String, modifier: Modifier = Modifier) {
+    Text(text, modifier = modifier, fontFamily = GeistMono,
+        fontWeight = FontWeight.Normal, fontSize = 10.sp, letterSpacing = 0.8.sp,
+        color = LocalHf.current.muted)
+}
+
+// Mono value on the right side of rows
+@Composable
+fun MonoVal(text: String, modifier: Modifier = Modifier, color: Color = MaterialTheme.colorScheme.onSurfaceVariant) {
+    Text(text, modifier = modifier, fontFamily = GeistMono, fontWeight = FontWeight.Normal,
+        fontSize = 13.sp, color = color)
+}
 
 @Composable
 fun HfCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Column(modifier.background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp)).padding(18.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
+    Column(modifier
+        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(6.dp))
+        .border(1.dp, LocalHf.current.hair, RoundedCornerShape(6.dp))
+        .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp), content = content)
 }
 
 @Composable
 fun HfCard(onClick: () -> Unit, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Column(modifier.background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
-        .clickable(onClick = onClick).padding(18.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
+    Column(modifier
+        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(6.dp))
+        .border(1.dp, LocalHf.current.hair, RoundedCornerShape(6.dp))
+        .clickable(onClick = onClick).padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp), content = content)
 }
 
 @Composable
 fun HfGroup(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Column(modifier.background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp)), content = content)
+    Column(modifier
+        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(6.dp))
+        .border(1.dp, LocalHf.current.hair, RoundedCornerShape(6.dp))
+        .padding(horizontal = 14.dp), content = content)
 }
 
 @Composable
-fun HfDivider() = HorizontalDivider(color = LocalHf.current.border, thickness = 1.dp)
-
-@Composable
-fun SecLabel(text: String) {
-    Text(text, style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(start = 6.dp, top = 2.dp))
-}
+fun HfDivider() = HorizontalDivider(color = LocalHf.current.hair, thickness = 1.dp)
 
 @Composable
 fun HfRow(
     icon: (@Composable () -> Unit)? = null, title: String, sub: String? = null,
     end: (@Composable () -> Unit)? = null, onClick: (() -> Unit)? = null
 ) {
-    val m = Modifier.fillMaxWidth().defaultMinSize(minHeight = 54.dp)
-    Row(
-        if (onClick != null) m.then(Modifier).let { it } else m,
+    val m = Modifier.fillMaxWidth().defaultMinSize(minHeight = 44.dp)
+    Row(if (onClick != null) m.clickable(onClick = onClick) else m,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
+        horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         if (icon != null) Box(Modifier.width(24.dp), contentAlignment = Alignment.Center) { icon() }
-        Column(Modifier.weight(1f).padding(vertical = 10.dp)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-            if (sub != null) Text(sub, style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Normal, color = MaterialTheme.colorScheme.onSurface)
+            if (sub != null) Text(sub, style = MaterialTheme.typography.bodySmall,
+                color = LocalHf.current.muted)
         }
         end?.invoke()
     }
@@ -74,28 +100,31 @@ fun HfRow(
 @Composable
 fun HfChip(text: String, selected: Boolean, onClick: () -> Unit) {
     val bg = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent
-    val fg = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-    val border = if (selected) Color.Transparent else LocalHf.current.track
+    val fg = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+    val border = if (selected) MaterialTheme.colorScheme.primary else LocalHf.current.hair2
     Surface(onClick = onClick, shape = CircleShape, color = bg,
-        border = androidx.compose.foundation.BorderStroke(1.5.dp, border)) {
-        Text(text, Modifier.padding(horizontal = 15.dp, vertical = 8.dp),
-            style = MaterialTheme.typography.bodyMedium, color = fg,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium)
+        border = BorderStroke(1.dp, border)) {
+        Text(text.uppercase(java.util.Locale.US), Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            fontFamily = GeistMono, fontSize = 10.sp, letterSpacing = 0.6.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal, color = fg)
     }
 }
 
 @Composable
 fun HfSegmented(options: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
-    Row(modifier.fillMaxWidth().background(LocalHf.current.neutral, RoundedCornerShape(22.dp)).padding(3.dp),
-        horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+    Row(modifier.fillMaxWidth()
+        .border(1.dp, LocalHf.current.hair, RoundedCornerShape(6.dp))) {
         options.forEachIndexed { i, o ->
             val on = i == selected
-            Surface(onClick = { onSelect(i) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(19.dp),
-                color = if (on) MaterialTheme.colorScheme.surface else Color.Transparent) {
+            Surface(onClick = { onSelect(i) }, modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(5.dp),
+                color = if (on) MaterialTheme.colorScheme.primary else Color.Transparent) {
                 Box(Modifier.fillMaxWidth().padding(vertical = 9.dp), contentAlignment = Alignment.Center) {
-                    Text(o, style = MaterialTheme.typography.bodyMedium,
-                        color = if (on) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = if (on) FontWeight.SemiBold else FontWeight.Medium)
+                    Text(o.uppercase(java.util.Locale.US), fontFamily = GeistMono, fontSize = 10.sp,
+                        letterSpacing = 0.7.sp,
+                        fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal,
+                        color = if (on) MaterialTheme.colorScheme.onPrimary
+                        else MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -104,76 +133,86 @@ fun HfSegmented(options: List<String>, selected: Int, onSelect: (Int) -> Unit, m
 
 @Composable
 fun HfPrimary(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, icon: (@Composable () -> Unit)? = null) {
-    Button(onClick = onClick, modifier = modifier.fillMaxWidth().height(48.dp), shape = CircleShape,
-        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) {
+    Button(onClick = onClick, modifier = modifier.fillMaxWidth().height(40.dp),
+        shape = RoundedCornerShape(6.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary),
+        contentPadding = PaddingValues(horizontal = 16.dp)) {
         icon?.invoke(); Spacer(if (icon != null) Modifier.width(8.dp) else Modifier.width(0.dp))
-        Text(text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+        Text(text, fontFamily = GeistSans, fontSize = 14.sp, fontWeight = FontWeight.Medium)
     }
 }
 
 @Composable
 fun HfSecondary(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, icon: (@Composable () -> Unit)? = null) {
-    Button(onClick = onClick, modifier = modifier.height(48.dp), shape = CircleShape,
-        colors = ButtonDefaults.buttonColors(containerColor = LocalHf.current.neutral,
-            contentColor = MaterialTheme.colorScheme.onSurface)) {
+    OutlinedButton(onClick = onClick, modifier = modifier.height(40.dp),
+        shape = RoundedCornerShape(6.dp),
+        border = BorderStroke(1.dp, LocalHf.current.hair2),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = Color.Transparent,
+            contentColor = MaterialTheme.colorScheme.onSurface),
+        contentPadding = PaddingValues(horizontal = 16.dp)) {
         icon?.invoke(); Spacer(if (icon != null) Modifier.width(8.dp) else Modifier.width(0.dp))
-        Text(text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+        Text(text, fontFamily = GeistSans, fontSize = 14.sp, fontWeight = FontWeight.Medium)
     }
-}
-
-@Composable
-fun HfTag(text: String, color: Color = MaterialTheme.colorScheme.onSurfaceVariant) {
-    Text(text, style = MaterialTheme.typography.labelSmall, color = color,
-        modifier = Modifier.background(LocalHf.current.neutral, RoundedCornerShape(9.dp))
-            .padding(horizontal = 9.dp, vertical = 2.dp))
 }
 
 // Stacked layer visual: solid = built layers, dashed = scaffolding
 @Composable
 fun LayerStack(layers: Int, scaffolding: Int = 0, modifier: Modifier = Modifier,
-               layerH: Dp = 11.dp, gap: Dp = 3.dp, maxW: Dp = 96.dp, accentLast: Boolean = false) {
-    val accent = MaterialTheme.colorScheme.primary
-    val block = LocalHf.current.block; val track = LocalHf.current.track
-    val dash = MaterialTheme.colorScheme.onSurfaceVariant
-    val h = (layerH + gap) * (layers + scaffolding) + 8.dp
+               layerH: Dp = 9.dp, gap: Dp = 3.dp, maxW: Dp = 120.dp, accentLast: Boolean = false) {
+    val accent = LocalHf.current.ok
+    val block = MaterialTheme.colorScheme.onSurface
+    val dash = LocalHf.current.scaffold
+    val count = (layers + scaffolding).coerceAtLeast(1)
+    val h = (layerH + gap) * count + 4.dp
     Canvas(modifier.size(width = maxW, height = h)) {
-        val bw = size.width - 16
-        drawRoundRect(track, Offset(4f, size.height - 5f), Size(size.width - 8, 4f), CornerRadius(2f))
-        var y = size.height - 6f
+        var y = size.height
+        if (layers == 0 && scaffolding == 0) {
+            y -= (layerH + gap).toPx()
+            drawRoundRect(dash.copy(alpha = 0.5f), Offset(0f, y), Size(size.width, layerH.toPx()),
+                androidx.compose.ui.geometry.CornerRadius(2.dp.toPx()),
+                style = Stroke(width = 1.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f))))
+        }
         for (i in 0 until layers) {
-            val ww = bw - (if (i < 6) i * 5 else 30).dp.toPx()
             y -= (layerH + gap).toPx()
             drawRoundRect(if (accentLast && i == layers - 1) accent else block,
-                Offset((size.width - ww) / 2, y), Size(ww, layerH.toPx()), CornerRadius(2.5.dp.toPx()))
+                Offset(0f, y), Size(size.width, layerH.toPx()),
+                androidx.compose.ui.geometry.CornerRadius(2.dp.toPx()))
         }
         for (j in 0 until scaffolding) {
-            val i = layers + j
-            val ww = bw - (if (i < 6) i * 5 else 30).dp.toPx()
             y -= (layerH + gap).toPx()
-            drawRoundRect(dash, Offset((size.width - ww) / 2, y), Size(ww, layerH.toPx()), CornerRadius(2.5.dp.toPx()),
-                style = Stroke(width = 1.4.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f))))
+            drawRoundRect(dash, Offset(0f, y), Size(size.width, layerH.toPx()),
+                androidx.compose.ui.geometry.CornerRadius(2.dp.toPx()),
+                style = Stroke(width = 1.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f))))
         }
     }
 }
 
-// Timer ring with remaining time centered
+// Timer ring: thin hairline track, white progress, mono digits centered
 @Composable
-fun TimerRing(progress: Float, label: String, sub: String, modifier: Modifier = Modifier, size: Dp = 200.dp) {
-    val accent = MaterialTheme.colorScheme.primary; val track = LocalHf.current.track
+fun TimerRing(progress: Float, label: String, sub: String, modifier: Modifier = Modifier, size: Dp = 236.dp) {
+    val fg = MaterialTheme.colorScheme.onSurface
+    val track = LocalHf.current.ringTrack
+    val muted = LocalHf.current.muted
     Box(modifier.size(size), contentAlignment = Alignment.Center) {
         Canvas(Modifier.size(size)) {
-            val sw = 8.dp.toPx(); val inset = sw / 2
-            drawArc(track.copy(alpha = 0.4f), 0f, 360f, false, Offset(inset, inset),
-                Size(this.size.width - sw, this.size.height - sw), style = Stroke(sw))
-            drawArc(accent, -90f, 360f * progress.coerceIn(0f, 1f), false, Offset(inset, inset),
-                Size(this.size.width - sw, this.size.height - sw), style = Stroke(sw, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+            val swTrack = 2.dp.toPx(); val swProg = 3.dp.toPx()
+            val inset = swProg
+            drawArc(track, 0f, 360f, false, Offset(inset, inset),
+                Size(this.size.width - 2 * inset, this.size.height - 2 * inset),
+                style = Stroke(swTrack))
+            drawArc(fg, -90f, 360f * progress.coerceIn(0f, 1f), false, Offset(inset, inset),
+                Size(this.size.width - 2 * inset, this.size.height - 2 * inset),
+                style = Stroke(swProg, cap = androidx.compose.ui.graphics.StrokeCap.Round))
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(label, style = MaterialTheme.typography.displayMedium.copy(fontSize = 44.sp,
-                fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum"),
-                color = MaterialTheme.colorScheme.onSurface)
-            Text(sub, style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(label, fontFamily = GeistMono, fontWeight = FontWeight.Medium, fontSize = 44.sp,
+                letterSpacing = (-1).sp, color = fg, fontFeatureSettings = "tnum")
+            Text(sub.uppercase(Locale.US), fontFamily = GeistMono, fontWeight = FontWeight.Normal,
+                fontSize = 10.sp, letterSpacing = 1.2.sp, color = muted)
         }
     }
 }
@@ -181,5 +220,5 @@ fun TimerRing(progress: Float, label: String, sub: String, modifier: Modifier = 
 fun fmtClock(sec: Long): String = "%d:%02d".format(sec / 60, sec % 60)
 fun fmtDur(sec: Long): String {
     val h = sec / 3600; val m = (sec % 3600) / 60
-    return if (h > 0) "${h} h ${m} min".replace(" 0 min", "") else "$m min"
+    return if (h > 0) "${h}h %02dm".format(m) else "${m}m"
 }
