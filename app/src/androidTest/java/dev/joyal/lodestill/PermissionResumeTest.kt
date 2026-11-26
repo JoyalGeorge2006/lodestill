@@ -63,7 +63,13 @@ class PermissionResumeTest {
                 status = "ACTIVE"))
         }
         val msg = "Block is not active"
-        rule.waitUntil(8_000) { rule.onAllNodesWithText(msg, substring = true).fetchSemanticsNodes().isNotEmpty() }
+        try { rule.waitUntil(8_000) { rule.onAllNodesWithText(msg, substring = true).fetchSemanticsNodes().isNotEmpty() } }
+        catch (e: Throwable) {
+            val tree = runCatching { rule.onRoot().printToString(60) }.getOrDefault("?")
+            throw AssertionError("warning not shown; tier=" + runBlocking { dev.joyal.lodestill.data.Prefs.flow(app).first().tier } +
+                " a11y=" + android.provider.Settings.Secure.getString(app.contentResolver, "enabled_accessibility_services") +
+                " TREE: " + tree.replace("\n", " | ").take(1500))
+        }
         rule.onAllNodesWithText(msg, substring = true).onFirst().assertIsDisplayed()
         rule.onAllNodesWithText(msg, substring = true).onFirst().performClick()
         Thread.sleep(2_000)
