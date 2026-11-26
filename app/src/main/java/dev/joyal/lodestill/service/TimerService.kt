@@ -72,7 +72,13 @@ class TimerService : Service() {
             events.getNextEvent(e)
             if (e.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND) foreground = e.packageName
         }
-        val pkg = foreground ?: return
+        // No fresh MOVE_TO_FOREGROUND in the window: fall back to the most
+        // recently used app, so an app already open when the session started
+        // (or a device that delays usage events) is still caught.
+        val pkg = foreground ?: run {
+            val stats = usm.queryUsageStats(UsageStatsManager.INTERVAL_BEST, now - 15_000, now)
+            stats?.filter { it.lastTimeUsed >= now - 15_000 }?.maxByOrNull { it.lastTimeUsed }?.packageName
+        } ?: return
         if (pkg == packageName) { hideOverlay(); return }
         // guardCheck only runs while a session is ACTIVE, so active=true here.
         if (!dev.joyal.lodestill.core.BlockRules.shouldAct(pkg, packageName,

@@ -28,9 +28,19 @@ private fun Back(nav: NavController) {
 
 @Composable
 fun SettingsScreen(vm: AppViewModel, nav: NavController) {
+    val ctx = LocalContext.current
     val settings by vm.settings.collectAsState()
     val blocked by vm.blockedApps.collectAsState()
     var showDisclosure by remember { mutableStateOf(false) }
+    // Permission truth for the chosen tier, refreshed every time we return
+    // to this screen (e.g. back from an Android Settings page).
+    var usageOk by remember { mutableStateOf(vm.hasUsageAccess()) }
+    var overlayOk by remember { mutableStateOf(vm.hasOverlay()) }
+    var a11yOk by remember { mutableStateOf(vm.isAccessibilityOn()) }
+    LifecycleResumeEffect(Unit) {
+        usageOk = vm.hasUsageAccess(); overlayOk = vm.hasOverlay(); a11yOk = vm.isAccessibilityOn()
+        onPauseOrDispose { }
+    }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Eyebrow("Preferences")
@@ -68,6 +78,22 @@ fun SettingsScreen(vm: AppViewModel, nav: NavController) {
             }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Under battery saver, blocks or alerts can be late or missed.",
                 style = MaterialTheme.typography.bodySmall, color = LocalHf.current.muted)
+            // User-requested: a clear prompt with a button that opens the exact
+            // Android Settings page for whatever the chosen tier is missing.
+            val missing = mutableListOf<Pair<String, () -> Unit>>()
+            if (settings.tier == 2) {
+                if (!usageOk) missing.add("Usage access" to { ctx.startActivity(vm.usageSettingsIntent()) })
+                if (!overlayOk) missing.add("Display over other apps" to { ctx.startActivity(vm.overlaySettingsIntent()) })
+            }
+            if (settings.tier == 3 && !a11yOk)
+                missing.add("Accessibility service" to { ctx.startActivity(vm.accessibilitySettingsIntent()) })
+            missing.forEach { (label, open) ->
+                HfDivider()
+                HfRow(title = "Needs permission: $label",
+                    sub = "Protection is off until this is granted",
+                    end = { MonoVal("Open", color = MaterialTheme.colorScheme.error) },
+                    onClick = open)
+            }
             HfDivider()
             HfRow(title = "Do Not Disturb", sub = "Silence interruptions while a session runs", end = {
                 Switch(checked = settings.dndEnabled, onCheckedChange = { vm.setDndEnabled(it) })
