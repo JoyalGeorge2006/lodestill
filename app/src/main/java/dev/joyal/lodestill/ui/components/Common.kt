@@ -51,7 +51,7 @@ fun MonoVal(text: String, modifier: Modifier = Modifier, color: Color = Material
 
 @Composable
 fun HfCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Column(modifier
+    Column(modifier.fillMaxWidth()
         .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(6.dp))
         .border(1.dp, LocalHf.current.hair, RoundedCornerShape(6.dp))
         .padding(14.dp),
@@ -60,7 +60,7 @@ fun HfCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() ->
 
 @Composable
 fun HfCard(onClick: () -> Unit, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Column(modifier
+    Column(modifier.fillMaxWidth()
         .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(6.dp))
         .border(1.dp, LocalHf.current.hair, RoundedCornerShape(6.dp))
         .clickable(onClick = onClick).padding(14.dp),
@@ -69,7 +69,7 @@ fun HfCard(onClick: () -> Unit, modifier: Modifier = Modifier, content: @Composa
 
 @Composable
 fun HfGroup(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Column(modifier
+    Column(modifier.fillMaxWidth()
         .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(6.dp))
         .border(1.dp, LocalHf.current.hair, RoundedCornerShape(6.dp))
         .padding(horizontal = 14.dp), content = content)

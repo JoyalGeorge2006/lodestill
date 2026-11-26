@@ -221,7 +221,16 @@ fun TimerOnlyScreen(remainingSec: Long, onExit: () -> Unit) {
     val view = LocalView.current
     DisposableEffect(Unit) {
         view.keepScreenOn = true
-        onDispose { view.keepScreenOn = false }
+        val window = (view.context as? android.app.Activity)?.window
+        val ctl = window?.let { androidx.core.view.WindowCompat.getInsetsController(it, view) }
+        // Digits-only mode: hide status and navigation bars; swipe still reveals them
+        // transiently and system gestures keep working. Bars return on exit.
+        ctl?.systemBarsBehavior = androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        ctl?.hide(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+        onDispose {
+            view.keepScreenOn = false
+            ctl?.show(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+        }
     }
     val minute = (remainingSec / 60).toInt()
     val dx = (((minute * 37) % 41) - 20).dp   // drift against burn-in, changes each minute

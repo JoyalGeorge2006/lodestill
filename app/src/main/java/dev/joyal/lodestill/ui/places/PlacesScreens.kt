@@ -38,7 +38,7 @@ fun PlacesScreen(vm: AppViewModel, nav: NavController) {
         if (scaffolding.isNotEmpty()) {
             HfCard(onClick = { nav.navigate("unfinished") }) {
                 MLabel("SCAFFOLDING")
-                HfRow(title = "${scaffolding.size} interrupted sessions waiting to be finished",
+                HfRow(title = "${scaffolding.size} interrupted session${if (scaffolding.size == 1) "" else "s"} waiting to be finished",
                     end = { MonoVal("\u203A") })
             }
         }
