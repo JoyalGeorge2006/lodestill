@@ -20,11 +20,11 @@ import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
 
-// Live foreground-switch coverage: real third-party apps are launched on the
-// device while a session runs, and the actual Guard overlay (tier 2, UsageStats
-// poll) and Block return (tier 3, accessibility callback) are observed through
-// UiAutomator. Selected app is acted on; unselected app is untouched; opt-out
-// stops the action mid-blocking.
+// Live Guard (tier 2, UsageStats poll) coverage: real third-party apps are
+// launched while a session runs and the overlay is observed through UiAutomator.
+// The tier-3 Block return path is verified by BlockScenarioSetup/TeardownTest,
+// driven from the shell without UiAutomation, which suppresses accessibility
+// services by default (UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES).
 @RunWith(AndroidJUnit4::class)
 class LiveBlockingTest {
     private val instr = InstrumentationRegistry.getInstrumentation()
@@ -46,27 +46,7 @@ class LiveBlockingTest {
         ctx.startActivity(i)
     }
 
-    @org.junit.Before fun before() = runBlocking {
-        TestReset.all(app)
-        // am instrument force-stops the target package at suite entry, and
-        // Android removes a force-stopped app's accessibility service from
-        // enabled_accessibility_services. Re-enable it now (as shell) so the
-        // Block service is actually bound while these tests run.
-        val svc = "$own/dev.joyal.lodestill.service.BlockAccessibilityService"
-        device.executeShellCommand("settings put secure enabled_accessibility_services $svc")
-        device.executeShellCommand("settings put secure accessibility_enabled 1")
-        // Verify the enablement actually took effect (component in the enabled
-        // list + master switch on) before relying on the service in tests.
-        withTimeout(15_000) {
-            while (true) {
-                val enabled = device.executeShellCommand("settings get secure enabled_accessibility_services")
-                val master = device.executeShellCommand("settings get secure accessibility_enabled").trim()
-                if (enabled.contains("BlockAccessibilityService") && master == "1") break
-                delay(500)
-            }
-        }
-        delay(2_000) // bind + onServiceConnected; logcat proves the bind via BlockSvc "connected
-    }
+    @org.junit.Before fun before() = runBlocking { TestReset.all(app) }
 
     @After fun reset() = runBlocking {
         TestReset.all(app)
@@ -82,6 +62,40 @@ class LiveBlockingTest {
         val selected = preferred.firstOrNull() ?: apps.first()
         val unselected = (preferred.drop(1) + apps).first { it != selected }
         return selected to unselected
+    }
+
+    @Test fun guardOverlayOnSelectedAppOnlyAndOptOutStopsIt() = runBlocking {
+        val (selected, unselected) = pickTwo()
+
+        val vm = AppViewModel(app)
+        val places = withTimeout(10_000) { vm.places.first { it.isNotEmpty() } }
+        val db = HfDb.get(app)
+        db.blockedApps().insert(BlockedApp(selected, selected, System.currentTimeMillis()))
+        Prefs.setTier(app, 2)
+        vm.startSession(places.first().id, 25, "guard-live")
+        withTimeout(10_000) { while (BlockState.blocked.isEmpty()) delay(100) }
+
+        // unselected app: no overlay
+        launch(unselected)
+        device.wait(Until.hasObject(By.pkg(unselected).depth(0)), 10_000)
+        delay(6_000) // several 2s guard ticks
+        assertNull("overlay must not appear over an unselected app",
+            device.findObject(By.textContains("tap to return")))
+
+        // selected app: Guard overlay appears
+        launch(selected)
+        device.wait(Until.hasObject(By.pkg(selected).depth(0)), 10_000)
+        val shown = device.wait(Until.hasObject(By.textContains("tap to return")), 20_000)
+        assertTrue("Guard overlay must appear over the selected app", shown)
+
+        // opt-out mid-blocking: tier drops to 1, overlay must disappear
+        vm.setTier(1)
+        val gone = device.wait(Until.gone(By.textContains("tap to return")), 15_000)
+        assertTrue("overlay must disappear after opt-out", gone)
+
+        vm.endEarly()
+        device.pressHome()
+        Unit
     }
 
     @Test fun guardOverlayOnSelectedAppOnlyAndOptOutStopsIt() = runBlocking {

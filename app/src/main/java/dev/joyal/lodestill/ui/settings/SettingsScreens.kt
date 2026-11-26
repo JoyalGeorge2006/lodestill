@@ -63,7 +63,7 @@ fun SettingsScreen(vm: AppViewModel, nav: NavController) {
                 }
                 if (!a11yOn) {
                     Spacer(Modifier.height(6.dp))
-                    Text("Block is off: the accessibility service is disabled. Force-stopping Lodestill disables it.",
+                    Text("Block is off: the accessibility service is disabled. This can happen after force-stopping Lodestill.",
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     TextButton(onClick = { nav.navigate("permissions") }) { Text("Fix in Blocking and permissions") }
                 }
@@ -109,7 +109,7 @@ fun AccessibilityDisclosure(onAccept: () -> Unit, onCancel: () -> Unit) {
                 style = MaterialTheme.typography.bodyMedium)
             Text("It never reads screen content, messages, passwords or what you type. It only sees which app opened.",
                 style = MaterialTheme.typography.bodyMedium)
-            Text("Under battery saver, blocks or alerts can be late or missed. Force-stopping Lodestill turns Block off; re-enable it from Blocking and permissions.",
+            Text("Under battery saver, blocks or alerts can be late or missed. Force-stopping Lodestill can turn Block off; re-enable it from Blocking and permissions.",
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             HfPrimary("I understand, continue", onClick = onAccept)
             TextButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) { Text("Not now") }

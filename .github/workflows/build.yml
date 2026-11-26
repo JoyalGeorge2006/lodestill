@@ -55,7 +55,7 @@ jobs:
             adb shell settings put secure enabled_accessibility_services dev.joyal.lodestill.debug/dev.joyal.lodestill.service.BlockAccessibilityService
             adb shell settings put secure accessibility_enabled 1
             rm -f /tmp/lodestill_test_failed
-            gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.notClass=dev.joyal.lodestill.ProcessDeathSetupTest,dev.joyal.lodestill.ProcessDeathVerifyTest --stacktrace || touch /tmp/lodestill_test_failed
+            gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.notClass=dev.joyal.lodestill.ProcessDeathSetupTest,dev.joyal.lodestill.ProcessDeathVerifyTest,dev.joyal.lodestill.BlockScenarioSetupTest,dev.joyal.lodestill.BlockScenarioTeardownTest --stacktrace || touch /tmp/lodestill_test_failed
             mkdir -p testxml && cp -r app/build/outputs/androidTest-results/connected testxml/main
             adb install -r app/build/outputs/apk/debug/app-debug.apk
             adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
@@ -64,6 +64,19 @@ jobs:
             adb shell appops set dev.joyal.lodestill.debug SYSTEM_ALERT_WINDOW allow
             adb shell settings put secure enabled_accessibility_services dev.joyal.lodestill.debug/dev.joyal.lodestill.service.BlockAccessibilityService
             adb shell settings put secure accessibility_enabled 1
+            rm -f /tmp/lodestill_sel /tmp/lodestill_unsel; for p in com.google.android.deskclock com.android.deskclock com.google.android.calculator com.android.calculator2 com.android.camera2; do if adb shell pm path $p 2>/dev/null | grep -q "package:"; then echo $p > /tmp/lodestill_sel; break; fi; done; echo "selected target: $(cat /tmp/lodestill_sel 2>/dev/null)"; [ -s /tmp/lodestill_sel ] || touch /tmp/lodestill_test_failed
+            for p in com.android.camera2 com.google.android.deskclock com.android.deskclock com.google.android.calculator com.android.calculator2; do if adb shell pm path $p 2>/dev/null | grep -q "package:" && [ "$p" != "$(cat /tmp/lodestill_sel 2>/dev/null)" ]; then echo $p > /tmp/lodestill_unsel; break; fi; done; echo "unselected target: $(cat /tmp/lodestill_unsel 2>/dev/null)"; [ -s /tmp/lodestill_unsel ] || touch /tmp/lodestill_test_failed
+            if [ -s /tmp/lodestill_sel ]; then OUT=$(adb shell am instrument -w -e class dev.joyal.lodestill.BlockScenarioSetupTest -e selected $(cat /tmp/lodestill_sel) dev.joyal.lodestill.debug.test/androidx.test.runner.AndroidJUnitRunner 2>&1); echo "$OUT"; echo "$OUT" | grep -q "OK (" || touch /tmp/lodestill_test_failed; fi
+            adb shell settings put secure enabled_accessibility_services dev.joyal.lodestill.debug/dev.joyal.lodestill.service.BlockAccessibilityService
+            adb shell settings put secure accessibility_enabled 1
+            sleep 4
+            if [ -s /tmp/lodestill_unsel ]; then adb shell monkey -p $(cat /tmp/lodestill_unsel) -c android.intent.category.LAUNCHER 1 > /dev/null; fi
+            sleep 6
+            FOCUS=$(adb shell dumpsys window | grep -E "mCurrentFocus"); echo "unselected focus: $FOCUS"; echo "$FOCUS" | grep -q "$(cat /tmp/lodestill_unsel 2>/dev/null)" || touch /tmp/lodestill_test_failed
+            if [ -s /tmp/lodestill_sel ]; then adb shell monkey -p $(cat /tmp/lodestill_sel) -c android.intent.category.LAUNCHER 1 > /dev/null; fi
+            sleep 8
+            FOCUS=$(adb shell dumpsys window | grep -E "mCurrentFocus"); echo "selected focus: $FOCUS"; echo "$FOCUS" | grep -q "dev.joyal.lodestill" || touch /tmp/lodestill_test_failed
+            OUT=$(adb shell am instrument -w -e class dev.joyal.lodestill.BlockScenarioTeardownTest dev.joyal.lodestill.debug.test/androidx.test.runner.AndroidJUnitRunner 2>&1); echo "$OUT"; echo "$OUT" | grep -q "OK (" || touch /tmp/lodestill_test_failed
             adb shell pm list packages | grep dev.joyal.lodestill
             OUT=$(adb shell am instrument -w -e class dev.joyal.lodestill.ProcessDeathSetupTest dev.joyal.lodestill.debug.test/androidx.test.runner.AndroidJUnitRunner 2>&1); echo "$OUT"; echo "$OUT" | grep -q "OK (" || touch /tmp/lodestill_test_failed
             adb shell input keyevent KEYCODE_HOME

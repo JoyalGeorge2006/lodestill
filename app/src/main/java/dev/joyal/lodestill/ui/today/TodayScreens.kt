@@ -79,7 +79,7 @@ fun TodayScreen(vm: AppViewModel, nav: NavController) {
                         textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                     if (settings.tier == 3 && !a11yOn) {
                         Spacer(Modifier.height(8.dp))
-                        Text("Block is off: the accessibility service is disabled. Force-stopping Lodestill disables it.",
+                        Text("Block is off: the accessibility service is disabled. This can happen after force-stopping Lodestill.",
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error,
                             textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                         TextButton(onClick = { ctx.startActivity(vm.accessibilitySettingsIntent()) }) { Text("Re-enable Block") }
