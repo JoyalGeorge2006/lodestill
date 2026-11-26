@@ -25,7 +25,7 @@ class PermissionResumeTest {
     private val device by lazy { UiDevice.getInstance(instr) }
     private val pkg get() = instr.targetContext.packageName
 
-    @Before fun before() = runBlocking { TestReset.all(app); dev.joyal.lodestill.data.Prefs.setTier(app, 2) }
+    @Before fun before() { runBlocking { TestReset.all(app); dev.joyal.lodestill.data.Prefs.setTier(app, 2) } }
     @After fun after() { device.executeShellCommand("appops set $pkg SYSTEM_ALERT_WINDOW allow")
         runBlocking { TestReset.all(app) } }
 
