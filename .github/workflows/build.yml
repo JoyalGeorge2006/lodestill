@@ -69,12 +69,12 @@ jobs:
             if [ -s /tmp/lodestill_sel ]; then OUT=$(adb shell am instrument -w -e class dev.joyal.lodestill.BlockScenarioSetupTest -e selected $(cat /tmp/lodestill_sel) dev.joyal.lodestill.debug.test/androidx.test.runner.AndroidJUnitRunner 2>&1); echo "$OUT"; echo "$OUT" | grep -q "OK (" || touch /tmp/lodestill_test_failed; fi
             adb shell monkey -p dev.joyal.lodestill.debug -c android.intent.category.LAUNCHER 1 > /dev/null || touch /tmp/lodestill_test_failed
             sleep 4
-            adb shell settings put secure enabled_accessibility_services "" || touch /tmp/lodestill_test_failed
+            adb shell settings delete secure enabled_accessibility_services || touch /tmp/lodestill_test_failed
             adb shell settings put secure accessibility_enabled 0 || touch /tmp/lodestill_test_failed
             adb shell settings put secure enabled_accessibility_services dev.joyal.lodestill.debug/dev.joyal.lodestill.service.BlockAccessibilityService || touch /tmp/lodestill_test_failed
             adb shell settings put secure accessibility_enabled 1 || touch /tmp/lodestill_test_failed
             sleep 5
-            BINDS=$(adb shell logcat -d | grep -c "BlockSvc: connected" || true); echo "BlockSvc connected lines so far: $BINDS"; adb shell logcat -d | grep "BlockSvc" | tail -5
+            echo "a11y list now: $(adb shell settings get secure enabled_accessibility_services), master: $(adb shell settings get secure accessibility_enabled)"; BINDS=$(adb shell logcat -d | grep -c "BlockSvc: connected" || true); echo "BlockSvc connected lines so far: $BINDS"; adb shell logcat -d | grep "BlockSvc" | tail -5
             if [ -s /tmp/lodestill_unsel ]; then adb shell monkey -p $(cat /tmp/lodestill_unsel) -c android.intent.category.LAUNCHER 1 > /dev/null || touch /tmp/lodestill_test_failed; fi
             sleep 6
             FOCUS=$(adb shell dumpsys window | grep -E "mCurrentFocus"); echo "unselected focus: $FOCUS"; echo "$FOCUS" | grep -q "$(cat /tmp/lodestill_unsel 2>/dev/null)" || touch /tmp/lodestill_test_failed
