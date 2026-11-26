@@ -35,6 +35,11 @@ jobs:
         with: { distribution: temurin, java-version: 17 }
       - uses: gradle/actions/setup-gradle@v4
         with: { gradle-version: "8.9" }
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
       - uses: ReactiveCircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -49,10 +54,22 @@ jobs:
             adb shell settings put secure enabled_accessibility_services dev.joyal.lodestill.debug/dev.joyal.lodestill.service.BlockAccessibilityService
             adb shell settings put secure accessibility_enabled 1
             gradle :app:connectedDebugAndroidTest --stacktrace
+            mkdir -p shots
             adb shell am start -n dev.joyal.lodestill.debug/.MainActivity
             sleep 8
-            mkdir -p shots
-            adb exec-out screencap -p > shots/today.png
+            adb exec-out screencap -p > shots/app_light.png
+            adb shell input keyevent KEYCODE_HOME
+            sleep 2
+            adb shell input swipe 540 1800 540 900 400
+            sleep 3
+            adb exec-out screencap -p > shots/launcher_light.png
+            adb shell cmd uimode night yes
+            sleep 3
+            adb exec-out screencap -p > shots/launcher_dark.png
+            adb shell am start -n dev.joyal.lodestill.debug/.MainActivity
+            sleep 5
+            adb exec-out screencap -p > shots/app_dark.png
+            adb shell cmd uimode night no
       - uses: actions/upload-artifact@v4
         with:
           name: emulator-screenshots
