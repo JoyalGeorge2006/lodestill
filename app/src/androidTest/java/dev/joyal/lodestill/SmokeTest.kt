@@ -2,6 +2,7 @@ package dev.joyal.lodestill
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -14,7 +15,7 @@ class SmokeTest {
     @get:Rule val rule = createAndroidComposeRule<MainActivity>()
 
     @Test fun todayShowsAndStartSheetOpens() {
-        rule.onNodeWithText("Today").assertIsDisplayed()
+        rule.onAllNodesWithText("Today")[0].assertIsDisplayed()
         rule.onNodeWithText("Start a session").assertIsDisplayed()
         rule.onNodeWithText("Start a session").performClick()
         rule.onNodeWithText("Begin").assertIsDisplayed()
