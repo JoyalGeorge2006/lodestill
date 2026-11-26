@@ -46,7 +46,17 @@ class LiveBlockingTest {
         ctx.startActivity(i)
     }
 
-    @org.junit.Before fun before() = runBlocking { TestReset.all(app) }
+    @org.junit.Before fun before() = runBlocking {
+        TestReset.all(app)
+        // am instrument force-stops the target package at suite entry, and
+        // Android removes a force-stopped app's accessibility service from
+        // enabled_accessibility_services. Re-enable it now (as shell) so the
+        // Block service is actually bound while these tests run.
+        val svc = "$own/dev.joyal.lodestill.service.BlockAccessibilityService"
+        device.executeShellCommand("settings put secure enabled_accessibility_services $svc")
+        device.executeShellCommand("settings put secure accessibility_enabled 1")
+        delay(2_000) // bind + onServiceConnected
+    }
 
     @After fun reset() = runBlocking {
         TestReset.all(app)

@@ -79,22 +79,11 @@ jobs:
             adb shell monkey -p dev.joyal.lodestill.debug -c android.intent.category.LAUNCHER 1 || touch /tmp/lodestill_test_failed
             sleep 8
             adb exec-out screencap -p > shots/app_light.png
-            S=$(adb shell wm size | awk '{print $3}'); W=${S%x*}; H=${S#*x}
-            adb shell input swipe $((W/2)) $((H*3/5)) $((W/2)) $((H/4)) 400
-            sleep 2
-            adb exec-out screencap -p > shots/app_today_scrolled.png
-            adb shell input tap $((W/8)) $((H*15/16)); sleep 2
-            adb shell input tap $((W*3/8)) $((H*15/16)); sleep 2
-            adb exec-out screencap -p > shots/screen_places.png
-            adb shell input tap $((W*5/8)) $((H*15/16)); sleep 2
-            adb exec-out screencap -p > shots/screen_notes.png
-            adb shell input tap $((W*7/8)) $((H*15/16)); sleep 2
-            adb exec-out screencap -p > shots/screen_settings.png
-            adb shell input keyevent KEYCODE_HOME
-            sleep 2
-            adb shell input swipe $((W/2)) $((H*4/5)) $((W/2)) $((H/3)) 400
-            sleep 3
-            adb exec-out screencap -p > shots/launcher_light.png
+            S=$(adb shell wm size | awk '{print $3}'); W=${S%x*}; H=${S#*x}; adb shell input swipe $((W/2)) $((H*3/5)) $((W/2)) $((H/4)) 400; sleep 2; adb exec-out screencap -p > shots/app_today_scrolled.png
+            S=$(adb shell wm size | awk '{print $3}'); W=${S%x*}; H=${S#*x}; adb shell input tap $((W*3/8)) $((H*15/16)); sleep 3; adb exec-out screencap -p > shots/screen_places.png
+            S=$(adb shell wm size | awk '{print $3}'); W=${S%x*}; H=${S#*x}; adb shell input tap $((W*5/8)) $((H*15/16)); sleep 3; adb exec-out screencap -p > shots/screen_notes.png
+            S=$(adb shell wm size | awk '{print $3}'); W=${S%x*}; H=${S#*x}; adb shell input tap $((W*7/8)) $((H*15/16)); sleep 3; adb exec-out screencap -p > shots/screen_settings.png
+            S=$(adb shell wm size | awk '{print $3}'); W=${S%x*}; H=${S#*x}; adb shell input keyevent KEYCODE_HOME; sleep 2; adb shell input swipe $((W/2)) $((H*4/5)) $((W/2)) $((H/3)) 400; sleep 3; adb exec-out screencap -p > shots/launcher_light.png
             adb shell cmd uimode night yes
             sleep 3
             adb exec-out screencap -p > shots/launcher_dark.png
