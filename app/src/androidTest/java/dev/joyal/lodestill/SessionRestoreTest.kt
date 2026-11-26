@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.After
+import org.junit.Before
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -20,10 +21,8 @@ class SessionRestoreTest {
     private val app = InstrumentationRegistry.getInstrumentation()
         .targetContext.applicationContext as Application
 
-    @After fun reset() = runBlocking {
-        Prefs.setTier(app, 0)
-        BlockState.active = false; BlockState.blocked = emptySet()
-    }
+    @Before fun before() = runBlocking { TestReset.all(app) }
+    @After fun reset() = runBlocking { TestReset.all(app) }
 
     @Test fun activeSessionSurvivesViewModelRecreation() = runBlocking {
         val vm1 = AppViewModel(app)

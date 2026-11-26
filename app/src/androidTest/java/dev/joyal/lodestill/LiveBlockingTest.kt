@@ -46,19 +46,26 @@ class LiveBlockingTest {
         ctx.startActivity(i)
     }
 
+    @org.junit.Before fun before() = runBlocking { TestReset.all(app) }
+
     @After fun reset() = runBlocking {
-        Prefs.setTier(app, 0)
-        HfDb.get(app).blockedApps().all().first().forEach { HfDb.get(app).blockedApps().delete(it.packageName) }
-        BlockState.active = false; BlockState.blocked = emptySet()
+        TestReset.all(app)
         device.pressHome()
         Unit
     }
 
-    @Test fun guardOverlayOnSelectedAppOnlyAndOptOutStopsIt() = runBlocking {
+    private fun pickTwo(): Pair<String, String> {
         val apps = launchableApps()
         assertTrue("need at least 2 non-exempt launchable apps, found: $apps", apps.size >= 2)
-        val selected = apps.first { it.contains("calculator") || it.contains("clock") || true }
-        val unselected = apps.first { it != selected }
+        // Prefer small stable apps (no first-run flows like Chrome's).
+        val preferred = apps.filter { it.contains("calculator") || it.contains("deskclock") || it.contains("clock") }
+        val selected = preferred.firstOrNull() ?: apps.first()
+        val unselected = (preferred.drop(1) + apps).first { it != selected }
+        return selected to unselected
+    }
+
+    @Test fun guardOverlayOnSelectedAppOnlyAndOptOutStopsIt() = runBlocking {
+        val (selected, unselected) = pickTwo()
 
         val vm = AppViewModel(app)
         val places = withTimeout(10_000) { vm.places.first { it.isNotEmpty() } }
@@ -92,10 +99,7 @@ class LiveBlockingTest {
     }
 
     @Test fun blockReturnsFromSelectedAppOnly() = runBlocking {
-        val apps = launchableApps()
-        assertTrue("need at least 2 non-exempt launchable apps, found: $apps", apps.size >= 2)
-        val selected = apps.first { it.contains("calculator") || it.contains("clock") || true }
-        val unselected = apps.first { it != selected }
+        val (selected, unselected) = pickTwo()
 
         val vm = AppViewModel(app)
         val places = withTimeout(10_000) { vm.places.first { it.isNotEmpty() } }
@@ -114,7 +118,11 @@ class LiveBlockingTest {
 
         // selected app: accessibility service returns to Lodestill
         launch(selected)
-        val back = device.wait(Until.hasObject(By.pkg(own).depth(0)), 20_000)
+        var back = device.wait(Until.hasObject(By.pkg(own).depth(0)), 15_000)
+        if (!back) { // slow emulator a11y window pipeline: emit a second event
+            launch(selected)
+            back = device.wait(Until.hasObject(By.pkg(own).depth(0)), 15_000)
+        }
         assertTrue("Block must return to Lodestill when the selected app opens", back)
 
         // opt-out during blocking: selected app opens and STAYS

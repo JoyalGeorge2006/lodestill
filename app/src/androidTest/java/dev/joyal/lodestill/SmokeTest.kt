@@ -14,6 +14,11 @@ import org.junit.runner.RunWith
 class SmokeTest {
     @get:Rule val rule = createAndroidComposeRule<MainActivity>()
 
+    @org.junit.Before fun before() = kotlinx.coroutines.runBlocking {
+        TestReset.all(androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+            .targetContext.applicationContext as android.app.Application)
+    }
+
     @Test fun todayShowsAndStartSheetOpens() {
         rule.onAllNodesWithText("Today")[0].assertIsDisplayed()
         rule.onNodeWithText("Start a session").assertIsDisplayed()

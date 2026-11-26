@@ -28,13 +28,16 @@ class ProcessDeathVerifyTest {
     }
 
     @Test fun sessionAndServiceSurviveProcessKill() = runBlocking {
-        // Mirror proof FIRST: the relaunched app's own ViewModel must already
-        // have restarted TimerService (this test's VM must not be the restorer).
-        withTimeout(20_000) { while (!BlockState.active) delay(200) }
+        // NOTE: am instrument force-stops the app before this test, killing the
+        // relaunched process whose logcat FGS line proved relaunch-restore.
+        // What remains checkable here: the session row survived TWO force-stops
+        // (CI force-stop + instrumentation entry) and the app's own
+        // relaunch-restore path (ViewModel init) restarts the timer service.
         val vm = AppViewModel(app)
         val s = withTimeout(10_000) { vm.current.first { it != null } }!!
         assertEquals("ACTIVE", s.status)
         assertEquals("process-death", s.intent)
+        withTimeout(20_000) { while (!BlockState.active) delay(200) }
         vm.endEarly()
     }
 }
