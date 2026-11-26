@@ -32,7 +32,8 @@ class BlockScenarioSetupTest {
             ?: "com.google.android.deskclock"
         val vm = AppViewModel(app)
         val places = withTimeout(10_000) { vm.places.first { it.isNotEmpty() } }
-        HfDb.get(app).blockedApps().insert(BlockedApp(selected, selected, System.currentTimeMillis()))
+        val label = InstrumentationRegistry.getArguments().getString("label") ?: selected
+        HfDb.get(app).blockedApps().insert(BlockedApp(selected, label, System.currentTimeMillis()))
         Prefs.setTier(app, 3)
         vm.startSession(places.first().id, 25, "block-scenario")
         withTimeout(10_000) { while (!BlockState.active) delay(100) }
