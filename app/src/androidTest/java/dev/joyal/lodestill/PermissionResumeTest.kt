@@ -53,6 +53,8 @@ class PermissionResumeTest {
     }
 
     @Test fun activeWarningIsVisibleAndOpensAccessibilitySettings() {
+        device.executeShellCommand("settings put secure accessibility_enabled 0")
+        device.executeShellCommand("settings delete secure enabled_accessibility_services")
         runBlocking {
             dev.joyal.lodestill.data.Prefs.setTier(app, 3)
             val db = dev.joyal.lodestill.data.HfDb.get(app)
