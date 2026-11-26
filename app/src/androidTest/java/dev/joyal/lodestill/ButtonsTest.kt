@@ -29,7 +29,10 @@ class ButtonsTest {
 
     private fun step(name: String, f: () -> Unit) {
         try { rule.waitForIdle(); f(); rule.waitForIdle() }
-        catch (e: Throwable) { failures.add("$name: ${e.message?.take(120)}") }
+        catch (e: Throwable) {
+            val tree = runCatching { rule.onRoot().printToString(40) }.getOrDefault("?")
+            android.util.Log.e("ButtonsTest", "step $name failed: ${e.message}\n$tree")
+            failures.add("$name: ${e.message?.take(120)} TREE: ${tree.replace("\n", " | ").take(700)}") }
     }
     private fun await(t: String) {
         rule.waitUntil(8_000) { rule.onAllNodesWithText(t).fetchSemanticsNodes().isNotEmpty() }
