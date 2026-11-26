@@ -7,6 +7,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -49,5 +50,25 @@ class PermissionResumeTest {
         device.executeShellCommand("appops set $pkg SYSTEM_ALERT_WINDOW allow"); cycle()
         rule.waitUntil(5_000) { !rowShown() }
         org.junit.Assert.assertFalse("re-granted: row must disappear on return", rowShown())
+    }
+
+    @Test fun activeWarningIsVisibleAndOpensAccessibilitySettings() {
+        runBlocking {
+            dev.joyal.lodestill.data.Prefs.setTier(app, 3)
+            val db = dev.joyal.lodestill.data.HfDb.get(app)
+            val p = db.places().places().first().first()
+            val t = System.currentTimeMillis()
+            db.sessions().insert(dev.joyal.lodestill.data.FocusSession(placeId = p.id, plannedSec = 2700,
+                targetSec = 2700, accumulatedSec = 0, segmentStart = t - 60_000, startedAt = t - 60_000,
+                status = "ACTIVE"))
+        }
+        val msg = "Block is not active"
+        rule.waitUntil(8_000) { rule.onAllNodesWithText(msg, substring = true).fetchSemanticsNodes().isNotEmpty() }
+        rule.onAllNodesWithText(msg, substring = true).onFirst().assertIsDisplayed()
+        rule.onAllNodesWithText(msg, substring = true).onFirst().performClick()
+        Thread.sleep(2_000)
+        org.junit.Assert.assertTrue("tap must open Android Settings, was ${device.currentPackageName}",
+            device.currentPackageName.contains("settings"))
+        device.pressBack(); Thread.sleep(800)
     }
 }

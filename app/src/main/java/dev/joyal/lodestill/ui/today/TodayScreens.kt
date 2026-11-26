@@ -146,15 +146,6 @@ fun TodayScreen(vm: AppViewModel, nav: NavController) {
                         }
                         Eyebrow("Layer ${vm.layersBuilt(s.placeId, sessions) + 1} \u00B7 ${fmtClock(Engine.focusedSec(s, now))} done \u00B7 kept either way")
                     }
-                    Spacer(Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        HfSecondary("Pause", onClick = { vm.pause() }, modifier = Modifier.weight(1f))
-                        HfSecondary("End early", onClick = { showEndEarly = true }, modifier = Modifier.weight(1f))
-                    }
-                    HfSecondary("Keep screen on", onClick = { vm.setTimerOnly(true) }, modifier = Modifier.fillMaxWidth())
-                    Text("Leave the app? You have ${settings.graceSec} seconds to come back before the layer becomes scaffolding.",
-                        style = MaterialTheme.typography.bodySmall, color = LocalHf.current.muted,
-                        textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                     // Only when the chosen protection cannot actually act right now.
                     val gap = when {
                         settings.tier >= 3 && !vm.isAccessibilityOn() ->
@@ -171,6 +162,15 @@ fun TodayScreen(vm: AppViewModel, nav: NavController) {
                             color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth().clickable { ctx.startActivity(intent) })
                     }
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        HfSecondary("Pause", onClick = { vm.pause() }, modifier = Modifier.weight(1f))
+                        HfSecondary("End early", onClick = { showEndEarly = true }, modifier = Modifier.weight(1f))
+                    }
+                    HfSecondary("Keep screen on", onClick = { vm.setTimerOnly(true) }, modifier = Modifier.fillMaxWidth())
+                    Text("Leave the app? You have ${settings.graceSec} seconds to come back before the layer becomes scaffolding.",
+                        style = MaterialTheme.typography.bodySmall, color = LocalHf.current.muted,
+                        textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                 }
                 "PAUSED" -> {
                     Eyebrow("${place?.name ?: "Focus"} \u00B7 paused")
