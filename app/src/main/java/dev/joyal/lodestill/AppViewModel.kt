@@ -189,11 +189,17 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun overlaySettingsIntent() = Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
         android.net.Uri.parse("package:" + getApplication<Application>().packageName))
     fun accessibilitySettingsIntent() = Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
+    // True only when Android reports our service as enabled AND accessibility is
+    // switched on globally; a name left in the enabled list is not enough.
     fun isAccessibilityOn(): Boolean {
-        val cr = getApplication<Application>().contentResolver
-        val enabled = android.provider.Settings.Secure.getString(cr,
-            android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: return false
-        return enabled.contains("dev.joyal.lodestill", ignoreCase = true)
+        val app = getApplication<Application>()
+        val global = android.provider.Settings.Secure.getInt(app.contentResolver,
+            android.provider.Settings.Secure.ACCESSIBILITY_ENABLED, 0) == 1
+        if (!global) return false
+        val am = app.getSystemService(android.view.accessibility.AccessibilityManager::class.java)
+        val list = am?.getEnabledAccessibilityServiceList(
+            android.accessibilityservice.AccessibilityServiceInfo.FEEDBACK_ALL_MASK).orEmpty()
+        return list.any { it.resolveInfo?.serviceInfo?.packageName == app.packageName }
     }
 
     // aggregates
