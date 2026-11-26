@@ -38,7 +38,7 @@ class CompletionTest {
         }
         // approved active-session subline must render while running
         rule.waitUntil(timeoutMillis = 10_000) {
-            rule.onAllNodesWithText("kept either way", substring = true).fetchSemanticsNodes().isNotEmpty()
+            rule.onAllNodesWithText("KEPT EITHER WAY", substring = true).fetchSemanticsNodes().isNotEmpty()
         }
         rule.waitUntil(timeoutMillis = 20_000) {
             rule.onAllNodesWithText("Layer built").fetchSemanticsNodes().isNotEmpty()
