@@ -55,7 +55,7 @@ jobs:
             adb shell settings put secure enabled_accessibility_services dev.joyal.lodestill.debug/dev.joyal.lodestill.service.BlockAccessibilityService
             adb shell settings put secure accessibility_enabled 1
             rm -f /tmp/lodestill_test_failed
-            gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.notClass=dev.joyal.lodestill.ProcessDeathSetupTest,dev.joyal.lodestill.ProcessDeathVerifyTest,dev.joyal.lodestill.BlockScenarioSetupTest,dev.joyal.lodestill.BlockScenarioTeardownTest --stacktrace || touch /tmp/lodestill_test_failed
+            gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.notClass=dev.joyal.lodestill.ProcessDeathSetupTest,dev.joyal.lodestill.ProcessDeathVerifyTest,dev.joyal.lodestill.BlockScenarioSetupTest,dev.joyal.lodestill.BlockScenarioTeardownTest,dev.joyal.lodestill.ScreenshotTest --stacktrace || touch /tmp/lodestill_test_failed
             mkdir -p testxml && cp -r app/build/outputs/androidTest-results/connected testxml/main
             adb install -r app/build/outputs/apk/debug/app-debug.apk
             adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
@@ -94,6 +94,7 @@ jobs:
             adb shell dumpsys accessibility > testxml/dumpsys-accessibility.txt 2>&1 || true
             adb shell settings get secure enabled_accessibility_services > testxml/enabled-a11y-services.txt 2>&1 || true
             mkdir -p shots/ui
+            adb shell am instrument -w -e class dev.joyal.lodestill.ScreenshotTest dev.joyal.lodestill.debug.test/androidx.test.runner.AndroidJUnitRunner || true
             adb pull /sdcard/Android/data/dev.joyal.lodestill.debug/files/shots/. shots/ui/ || true
             adb shell monkey -p dev.joyal.lodestill.debug -c android.intent.category.LAUNCHER 1 || touch /tmp/lodestill_test_failed
             sleep 8
