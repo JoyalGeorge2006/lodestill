@@ -61,6 +61,12 @@ class ScreenshotTest {
             }
             Thread.sleep(2500); shot("03-active")
         }
+        tryStep("03b-active-block-unavailable") {
+            runBlocking { dev.joyal.lodestill.data.Prefs.setTier(app, 3) }
+            Thread.sleep(1500); shot("03b-active-block-unavailable")
+            runBlocking { dev.joyal.lodestill.data.Prefs.setTier(app, 0) }
+            Thread.sleep(800)
+        }
         tryStep("17-timer-only") { tap("Keep screen on"); shot("17-timer-only"); rule.onRoot().performClick(); rule.waitForIdle() }
         tryStep("04-interrupted") {
             runBlocking {

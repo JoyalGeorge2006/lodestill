@@ -80,15 +80,31 @@ class ButtonsTest {
         step("end-early-dialog") {
             tap("End early"); shown("Keep focusing")
             rule.onAllNodesWithText("End early").onLast().performClick()
-            shown("Continue session") }
-        step("interrupted-let-it-rest") { tap("Let it rest"); shown("Ready to focus?") }
+            // Ending early banks the focus as scaffolding and returns to idle.
+            shown("Ready to focus?"); shown("SCAFFOLDING") }
         step("unfinished-finish") {
-            shown("SCAFFOLDING"); tap("View  \u203A"); shown("Unfinished")
+            tap("View  \u203A"); shown("Unfinished")
             rule.onAllNodesWithText("Finish  \u203A").onFirst().performClick()
             shown("Pause"); tap("End early")
             rule.onAllNodesWithText("End early").onLast().performClick()
-            tap("Let it rest")
-        }
+            shown("Ready to focus?") }
+        step("interrupted-continue-and-let-it-rest") {
+            // The interrupted sheet only appears after leaving the app past grace.
+            runBlocking {
+                val db = dev.joyal.lodestill.data.HfDb.get(app)
+                val p = db.places().places().first().first()
+                val t = System.currentTimeMillis()
+                db.sessions().insert(dev.joyal.lodestill.data.FocusSession(placeId = p.id, plannedSec = 2700,
+                    targetSec = 2700, accumulatedSec = 600, segmentStart = null, startedAt = t - 900_000,
+                    status = "INTERRUPTED"))
+            }
+            shown("Continue session"); tap("Continue session"); shown("Pause")
+            runBlocking {
+                val db = dev.joyal.lodestill.data.HfDb.get(app)
+                val c = db.sessions().current()!!
+                db.sessions().update(c.copy(status = "INTERRUPTED", accumulatedSec = 700, segmentStart = null))
+            }
+            shown("Let it rest"); tap("Let it rest"); shown("Ready to focus?") }
         step("notes-save") {
             tap("NOTES"); type("button walk note")
             tap("Save note"); shown("button walk note") }
