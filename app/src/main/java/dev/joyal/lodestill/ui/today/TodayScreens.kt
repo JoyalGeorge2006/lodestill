@@ -155,6 +155,22 @@ fun TodayScreen(vm: AppViewModel, nav: NavController) {
                     Text("Leave the app? You have ${settings.graceSec} seconds to come back before the layer becomes scaffolding.",
                         style = MaterialTheme.typography.bodySmall, color = LocalHf.current.muted,
                         textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                    // Only when the chosen protection cannot actually act right now.
+                    val gap = when {
+                        settings.tier >= 3 && !vm.isAccessibilityOn() ->
+                            "Block is not active: accessibility service is off." to vm.accessibilitySettingsIntent()
+                        settings.tier == 2 && !vm.hasUsageAccess() ->
+                            "Guard is not active: usage access is off." to vm.usageSettingsIntent()
+                        settings.tier == 2 && !vm.hasOverlay() ->
+                            "Guard is not active: display over other apps is off." to vm.overlaySettingsIntent()
+                        else -> null
+                    }
+                    gap?.let { (msg, intent) ->
+                        val ctx = androidx.compose.ui.platform.LocalContext.current
+                        Text("$msg Tap to open Settings.", style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth().clickable { ctx.startActivity(intent) })
+                    }
                 }
                 "PAUSED" -> {
                     Eyebrow("${place?.name ?: "Focus"} \u00B7 paused")
