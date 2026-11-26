@@ -207,6 +207,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val today = dayKey(System.currentTimeMillis())
         return sessions.filter { dayKey(it.startedAt) == today }.sumOf { it.accumulatedSec }
     }
+    // Calendar week (local, starting the locale's first weekday) total focused seconds.
+    fun weekFocusSec(sessions: List<FocusSession>): Long {
+        val cal = java.util.Calendar.getInstance()
+        cal.set(java.util.Calendar.HOUR_OF_DAY, 0); cal.clear(java.util.Calendar.MINUTE)
+        cal.clear(java.util.Calendar.SECOND); cal.clear(java.util.Calendar.MILLISECOND)
+        cal.set(java.util.Calendar.DAY_OF_WEEK, cal.firstDayOfWeek)
+        val weekStart = cal.timeInMillis
+        return sessions.filter { it.startedAt >= weekStart }.sumOf { it.accumulatedSec }
+    }
     fun placeSessionCounts(placeId: Long, sessions: List<FocusSession>, sinceMs: Long): Long =
         sessions.filter { it.placeId == placeId && it.startedAt >= sinceMs }.sumOf { it.accumulatedSec }
     companion object {

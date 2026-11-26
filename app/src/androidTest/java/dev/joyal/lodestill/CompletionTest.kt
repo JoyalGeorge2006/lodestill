@@ -36,9 +36,14 @@ class CompletionTest {
             db.sessions().insert(FocusSession(placeId = p.id, plannedSec = 2700, targetSec = 2700,
                 segmentStart = t - 2_698_000, startedAt = t - 2_698_000, status = "ACTIVE"))
         }
+        // approved active-session subline must render while running
+        rule.waitUntil(timeoutMillis = 10_000) {
+            rule.onAllNodesWithText("kept either way", substring = true).fetchSemanticsNodes().isNotEmpty()
+        }
         rule.waitUntil(timeoutMillis = 20_000) {
             rule.onAllNodesWithText("Layer built").fetchSemanticsNodes().isNotEmpty()
         }
+        rule.onNodeWithText("This week").assertIsDisplayed()
         rule.onNodeWithText("Layer built").assertIsDisplayed()
         rule.onNodeWithText("Done").performClick()
         rule.waitUntil(timeoutMillis = 10_000) {

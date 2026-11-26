@@ -105,6 +105,8 @@ fun TodayScreen(vm: AppViewModel, nav: NavController) {
             }
             HfCard {
                 HfRow(title = "Total today", end = { MonoVal(fmtDur(vm.todayFocusSec(sessions))) })
+                HfDivider()
+                HfRow(title = "This week", end = { MonoVal(fmtDur(vm.weekFocusSec(sessions))) })
             }
             HfPrimary("Done", onClick = { vm.dismissCompleted() })
         } else if (s == null) {
@@ -142,7 +144,7 @@ fun TodayScreen(vm: AppViewModel, nav: NavController) {
                             Text(it, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(Modifier.height(6.dp))
                         }
-                        Eyebrow("${fmtClock(Engine.focusedSec(s, now))} done")
+                        Eyebrow("Layer ${vm.layersBuilt(s.placeId, sessions) + 1} \u00B7 ${fmtClock(Engine.focusedSec(s, now))} done \u00B7 kept either way")
                     }
                     Spacer(Modifier.height(8.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
