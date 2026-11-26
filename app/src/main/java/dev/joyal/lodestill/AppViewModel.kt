@@ -189,8 +189,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun overlaySettingsIntent() = Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
         android.net.Uri.parse("package:" + getApplication<Application>().packageName))
     fun accessibilitySettingsIntent() = Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
-    // True only when Android reports our service as enabled AND accessibility is
-    // switched on globally; a name left in the enabled list is not enough.
+    // True only when accessibility is on globally, Android lists our service as
+    // enabled, and the service is bound; a name left in the enabled list is not enough.
     fun isAccessibilityOn(): Boolean {
         val app = getApplication<Application>()
         val global = android.provider.Settings.Secure.getInt(app.contentResolver,
@@ -199,7 +199,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val am = app.getSystemService(android.view.accessibility.AccessibilityManager::class.java)
         val list = am?.getEnabledAccessibilityServiceList(
             android.accessibilityservice.AccessibilityServiceInfo.FEEDBACK_ALL_MASK).orEmpty()
-        return list.any { it.resolveInfo?.serviceInfo?.packageName == app.packageName }
+        // Enabled in system settings AND currently bound to this process
+        // (BlockState.connected is set in onServiceConnected, cleared in onUnbind).
+        // Bound means Android can deliver events to it; it is not a guarantee that
+        // every OEM delivers every window event.
+        return list.any { it.resolveInfo?.serviceInfo?.packageName == app.packageName } &&
+            dev.joyal.lodestill.service.BlockState.connected
     }
 
     // aggregates
