@@ -53,7 +53,8 @@ jobs:
             adb shell appops set dev.joyal.lodestill.debug SYSTEM_ALERT_WINDOW allow
             adb shell settings put secure enabled_accessibility_services dev.joyal.lodestill.debug/dev.joyal.lodestill.service.BlockAccessibilityService
             adb shell settings put secure accessibility_enabled 1
-            gradle :app:connectedDebugAndroidTest --stacktrace
+            TEST_RC=0
+            gradle :app:connectedDebugAndroidTest --stacktrace || TEST_RC=$?
             mkdir -p shots
             adb shell am start -n dev.joyal.lodestill.debug/.MainActivity
             sleep 8
@@ -70,7 +71,9 @@ jobs:
             sleep 5
             adb exec-out screencap -p > shots/app_dark.png
             adb shell cmd uimode night no
-      - uses: actions/upload-artifact@v4
+            exit $TEST_RC
+      - if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: emulator-screenshots
           path: shots/
