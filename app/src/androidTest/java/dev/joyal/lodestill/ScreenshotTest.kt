@@ -28,8 +28,8 @@ class ScreenshotTest {
     private val app = inst.targetContext.applicationContext as Application
     private val dir = File(inst.targetContext.getExternalFilesDir(null), "shots").also { it.mkdirs() }
 
-    @org.junit.After fun after() = runBlocking { TestReset.all(app) }
-    @Before fun before() = runBlocking { TestReset.all(app) }
+    @org.junit.After fun after() = runBlocking { TestReset.all(app); dev.joyal.lodestill.data.Prefs.setTheme(app, "system") }
+    @Before fun before() = runBlocking { TestReset.all(app); dev.joyal.lodestill.data.Prefs.setTheme(app, "dark") }
 
     private fun shot(name: String) {
         rule.waitForIdle(); Thread.sleep(900)

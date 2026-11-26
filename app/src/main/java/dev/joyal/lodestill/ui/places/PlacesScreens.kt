@@ -54,7 +54,7 @@ fun PlacesScreen(vm: AppViewModel, nav: NavController) {
                 }
                 LayerStack(layers, maxW = 400.dp, modifier = Modifier.fillMaxWidth())
                 Text(if (layers == 0 && totalSec == 0L) "No sessions yet."
-                    else "$layers layers \u00B7 $days days \u00B7 ${fmtDur(totalSec)}",
+                    else "$layers layers \u00B7 $days ${if (days == 1) "day" else "days"} \u00B7 ${fmtDur(totalSec)}",
                     fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
@@ -96,7 +96,7 @@ fun PlaceDetailScreen(vm: AppViewModel, nav: NavController, placeId: Long) {
             LayerStack(layers, scaffolding = scaf.size, maxW = 400.dp, modifier = Modifier.fillMaxWidth())
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Bottom) {
-                Text("$layers layers \u00B7 $days days", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("$layers layers \u00B7 $days ${if (days == 1) "day" else "days"}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Eyebrow("total ${fmtDur(total)}", color = LocalHf.current.muted)
             }
         }
