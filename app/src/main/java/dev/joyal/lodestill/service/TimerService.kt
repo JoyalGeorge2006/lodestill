@@ -34,7 +34,11 @@ class TimerService : Service() {
     private val tick = object : Runnable {
         override fun run() {
             val db = HfDb.get(this@TimerService)
-            val s = runBlocking { db.sessions().byId(sessionId) }
+            // Sticky restart after process death delivers no intent; fall back
+            // to the current session row before giving up.
+            val s = runBlocking {
+                db.sessions().byId(sessionId) ?: db.sessions().current()
+            }?.also { sessionId = it.id }
             if (s == null || (s.status != "ACTIVE" && s.status != "PAUSED")) {
                 BlockState.active = false; BlockState.blocked = emptySet(); hideOverlay(); stopSelf(); return
             }

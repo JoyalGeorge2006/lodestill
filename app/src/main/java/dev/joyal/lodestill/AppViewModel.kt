@@ -26,6 +26,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val _now = MutableStateFlow(System.currentTimeMillis())
     val now: StateFlow<Long> = _now
     private var ticker: Job? = null
+    private var serviceStartedFor: Long = -1
 
     init {
         viewModelScope.launch {
@@ -36,7 +37,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                     if (r.event != "none") { db.sessions().update(r.s); cur = r.s }
                 }
                 _current.value = cur
-                if (cur != null && (cur.status == "ACTIVE" || cur.status == "PAUSED")) startTicker() else stopTicker()
+                if (cur != null && (cur.status == "ACTIVE" || cur.status == "PAUSED")) {
+                    startTicker()
+                    // Restore the foreground timer after process death or app
+                    // relaunch; the Room row is the source of truth.
+                    if (serviceStartedFor != cur.id) {
+                        serviceStartedFor = cur.id
+                        dev.joyal.lodestill.service.TimerService.start(getApplication(), cur.id)
+                    }
+                } else stopTicker()
             }
         }
         // seed default places on first run

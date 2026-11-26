@@ -48,13 +48,21 @@ jobs:
           script: |
             gradle :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
             adb install -r app/build/outputs/apk/debug/app-debug.apk
+            adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
             adb shell pm grant dev.joyal.lodestill.debug android.permission.POST_NOTIFICATIONS
             adb shell appops set dev.joyal.lodestill.debug android:get_usage_stats allow
             adb shell appops set dev.joyal.lodestill.debug SYSTEM_ALERT_WINDOW allow
             adb shell settings put secure enabled_accessibility_services dev.joyal.lodestill.debug/dev.joyal.lodestill.service.BlockAccessibilityService
             adb shell settings put secure accessibility_enabled 1
             TEST_RC=0
-            gradle :app:connectedDebugAndroidTest --stacktrace || TEST_RC=$?
+            gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.notClass=dev.joyal.lodestill.ProcessDeathSetupTest,dev.joyal.lodestill.ProcessDeathVerifyTest --stacktrace || TEST_RC=$?
+            gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=dev.joyal.lodestill.ProcessDeathSetupTest --stacktrace || TEST_RC=$?
+            adb shell input keyevent KEYCODE_HOME
+            adb shell am force-stop dev.joyal.lodestill.debug
+            sleep 3
+            adb shell am start -n dev.joyal.lodestill.debug/.MainActivity
+            sleep 8
+            gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=dev.joyal.lodestill.ProcessDeathVerifyTest --stacktrace || TEST_RC=$?
             mkdir -p shots
             adb shell am start -n dev.joyal.lodestill.debug/.MainActivity
             sleep 8
