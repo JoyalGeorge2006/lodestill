@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.joyal.lodestill.R
 
-// Vercel/Geist tokens inverted to true black (AMOLED). Approved redesign v0.2.0.
+// Vercel/Geist tokens inverted to true black (AMOLED). AMOLED redesign v0.2.0.
 object HfColors {
     // Dark (AMOLED)
     val DarkBg = Color(0xFF000000); val DarkSurface = Color(0xFF0B0B0B)

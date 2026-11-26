@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -54,6 +55,7 @@ fun HfDialog(onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit)
         text = { Column(verticalArrangement = Arrangement.spacedBy(10.dp), content = content) })
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TodayScreen(vm: AppViewModel, nav: NavController) {
     val current by vm.current.collectAsState()
@@ -63,7 +65,11 @@ fun TodayScreen(vm: AppViewModel, nav: NavController) {
     val scaffolding by vm.scaffolding.collectAsState()
     val settings by vm.settings.collectAsState()
     val timerOnly by vm.timerOnly.collectAsState()
+    val completed by vm.completed.collectAsState()
     var showStart by remember { mutableStateOf(false) }
+    var selPlace by remember { mutableStateOf(0L) }
+    var selMin by remember(settings.defaultLengthMin) { mutableStateOf(settings.defaultLengthMin) }
+    val placeIdEff = if (places.any { it.id == selPlace }) selPlace else (places.firstOrNull()?.id ?: 0L)
     var showEndEarly by remember { mutableStateOf(false) }
     val s0 = current
 
@@ -81,12 +87,36 @@ fun TodayScreen(vm: AppViewModel, nav: NavController) {
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
         val s = current
         val date = SimpleDateFormat("EEEE d MMM", Locale.getDefault()).format(Date(now))
-        if (s == null) {
+        val done = completed
+        if (s == null && done != null) {
+            val place = places.firstOrNull { it.id == done.placeId }
+            val layers = vm.layersBuilt(done.placeId, sessions)
+            Eyebrow("Session complete")
+            Text("Layer built", style = MaterialTheme.typography.headlineLarge)
+            Text("${place?.name ?: "Your place"} grew by one layer. Nothing decays.",
+                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            HfCard {
+                MLabel((place?.name ?: "Place").uppercase(Locale.US))
+                LayerStack(layers, maxW = 400.dp, accentLast = true, modifier = Modifier.fillMaxWidth())
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("$layers layers", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    MonoVal("\u2713 +1 today", color = LocalHf.current.ok)
+                }
+            }
+            HfCard {
+                HfRow(title = "Total today", end = { MonoVal(fmtDur(vm.todayFocusSec(sessions))) })
+            }
+            HfPrimary("Done", onClick = { vm.dismissCompleted() })
+        } else if (s == null) {
             Eyebrow(date)
             Text("Ready to focus?", style = MaterialTheme.typography.headlineLarge)
             HfCard {
                 MLabel("NEXT SESSION")
-                Text("${settings.defaultLengthMin} minutes builds one layer at any place.",
+                HfRow(title = "Place", end = { MonoVal((places.firstOrNull { it.id == placeIdEff }?.name ?: "-") + "  \u203A") },
+                    onClick = { showStart = true })
+                HfDivider()
+                HfRow(title = "Length", end = { MonoVal("${selMin}m  \u203A") }, onClick = { showStart = true })
+                Text("$selMin minutes builds one layer at any place.",
                     style = MaterialTheme.typography.bodySmall, color = LocalHf.current.muted)
                 HfPrimary("Start a session", onClick = { showStart = true })
             }
@@ -120,9 +150,6 @@ fun TodayScreen(vm: AppViewModel, nav: NavController) {
                         HfSecondary("End early", onClick = { showEndEarly = true }, modifier = Modifier.weight(1f))
                     }
                     HfSecondary("Keep screen on", onClick = { vm.setTimerOnly(true) }, modifier = Modifier.fillMaxWidth())
-                    Text("Keep screen on shows only the remaining time and stops the screen from sleeping while the session runs. Tap anywhere to return.",
-                        style = MaterialTheme.typography.bodySmall, color = LocalHf.current.muted,
-                        textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                     Text("Leave the app? You have ${settings.graceSec} seconds to come back before the layer becomes scaffolding.",
                         style = MaterialTheme.typography.bodySmall, color = LocalHf.current.muted,
                         textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
@@ -137,34 +164,29 @@ fun TodayScreen(vm: AppViewModel, nav: NavController) {
                     HfSecondary("End early", onClick = { showEndEarly = true }, modifier = Modifier.fillMaxWidth())
                 }
                 "INTERRUPTED" -> {
-                    Eyebrow("Interrupted")
-                    Text("Interrupted", style = MaterialTheme.typography.headlineLarge)
-                    Text("${fmtClock(s.accumulatedSec)} of focus is kept as scaffolding. Finish it within ${settings.finishWindowH} hours and the layer still counts.",
-                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.height(6.dp))
-                    HfPrimary("Continue session", onClick = { vm.resumeInterrupted() })
-                    HfSecondary("Let it rest", onClick = { vm.endEarly() }, modifier = Modifier.fillMaxWidth())
-                }
-                "COMPLETED" -> {
-                    val layers = vm.layersBuilt(s.placeId, sessions)
-                    Eyebrow("Session complete")
-                    Text("Layer built", style = MaterialTheme.typography.headlineLarge)
-                    Text("${place?.name ?: "Your place"} grew by one layer. Nothing decays.",
-                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    HfCard {
-                        MLabel((place?.name ?: "Place").uppercase(Locale.US))
-                        LayerStack(layers, maxW = 400.dp, accentLast = true, modifier = Modifier.fillMaxWidth())
-                        Text("$layers layers", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Eyebrow("${place?.name ?: "Focus"} \u00B7 session active")
+                    Column(Modifier.fillMaxWidth().padding(top = 8.dp).alpha(0.25f), horizontalAlignment = Alignment.CenterHorizontally) {
+                        TimerRing((s.accumulatedSec.toFloat() / s.targetSec).coerceIn(0f, 1f),
+                            Engine.fmtRemaining((s.targetSec - s.accumulatedSec).coerceAtLeast(0)), "remaining")
                     }
-                    TodaySummary(vm, places, sessions, 0L)
-                    HfPrimary("Done", onClick = { vm.endEarly() })
+                    val away = s.endedAt?.let { ((now - it) / 1000).coerceAtLeast(0) }
+                    HfSheet(onDismiss = {}, dismissible = false) {
+                        Eyebrow("Interrupted")
+                        Text(if (away != null) "Away ${fmtDur2(away)}" else "Interrupted", style = MaterialTheme.typography.titleLarge)
+                        Text("${fmtClock(s.accumulatedSec)} of focus is kept as scaffolding. Finish it within ${settings.finishWindowH} hours and the layer still counts.",
+                            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.height(6.dp))
+                        HfPrimary("Continue session", onClick = { vm.resumeInterrupted() })
+                        HfSecondary("Let it rest", onClick = { vm.endEarly() }, modifier = Modifier.fillMaxWidth())
+                    }
                 }
+                else -> {}
             }
-            if (s.status != "COMPLETED") TodaySummary(vm, places, sessions, s.accumulatedSec)
+            TodaySummary(vm, places, sessions, s.accumulatedSec)
         }
     }
 
-    if (showStart) StartSheet(vm, places, settings.defaultLengthMin) { showStart = false }
+    if (showStart) StartSheet(vm, places, placeIdEff, selMin, onPlace = { selPlace = it }, onMin = { selMin = it }) { showStart = false }
     if (showEndEarly) {
         val kept = current?.accumulatedSec ?: 0
         HfDialog(onDismiss = { showEndEarly = false }) {
@@ -214,33 +236,71 @@ fun TimerOnlyScreen(remainingSec: Long, onExit: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StartSheet(vm: AppViewModel, places: List<Place>, defaultMin: Int, onClose: () -> Unit) {
-    var placeId by remember { mutableStateOf(places.firstOrNull()?.id ?: 0L) }
-    var minutes by remember { mutableStateOf(defaultMin) }
-    var custom by remember { mutableStateOf(false) }
-    var customText by remember { mutableStateOf("") }
+fun HfSheet(onDismiss: () -> Unit, dismissible: Boolean = true, content: @Composable ColumnScope.() -> Unit) {
+    val state = rememberModalBottomSheetState(skipPartiallyExpanded = true,
+        confirmValueChange = { dismissible || it != SheetValue.Hidden })
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = state,
+        containerColor = LocalHf.current.surface2,
+        shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
+        scrimColor = Color.Black.copy(alpha = 0.62f),
+        dragHandle = null) {
+        Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 22.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp), content = content)
+    }
+}
+
+fun fmtDur2(sec: Long): String = if (sec >= 60) "${sec / 60}m ${sec % 60}s" else "${sec}s"
+
+@Composable
+fun StartSheet(vm: AppViewModel, places: List<Place>, placeId: Long, minutes: Int,
+               onPlace: (Long) -> Unit, onMin: (Int) -> Unit, onClose: () -> Unit) {
+    var open by remember { mutableStateOf("") }   // which row is expanded: place | length | intent
     var intent by remember { mutableStateOf("") }
-    HfDialog(onDismiss = onClose) {
-        Eyebrow("New session")
-        Text("Start a session", style = MaterialTheme.typography.titleMedium)
-        MLabel("PLACE")
-        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            places.forEach { p -> HfChip(p.name, p.id == placeId) { placeId = p.id } }
-        }
-        MLabel("LENGTH")
-        HfSegmented(listOf("25m", "45m", "60m", "90m", "Custom"),
-            if (custom) 4 else listOf(25, 45, 60, 90).indexOf(minutes).let { if (it < 0) 4 else it },
-            onSelect = { i -> if (i == 4) custom = true else { custom = false; minutes = listOf(25, 45, 60, 90)[i] } })
-        if (custom) {
-            HfField(customText, {
-                customText = it.filter(Char::isDigit).take(3)
-                customText.toIntOrNull()?.let { v -> if (v in 5..480) minutes = v }
-            }, "Minutes (5-480)", keyboard = KeyboardOptions(keyboardType = KeyboardType.Number), mono = true)
+    var showCustom by remember { mutableStateOf(false) }
+    val presets = listOf(25, 45, 60, 90)
+    if (showCustom) {
+        var text by remember { mutableStateOf(if (minutes in presets) "" else minutes.toString()) }
+        val v = text.toIntOrNull()
+        val ok = v != null && v in 5..480
+        HfSheet(onDismiss = { showCustom = false }) {
+            Eyebrow("Length")
+            Text("Custom length", style = MaterialTheme.typography.titleLarge)
+            HfField(text, { text = it.filter(Char::isDigit).take(3) }, "minutes",
+                keyboard = KeyboardOptions(keyboardType = KeyboardType.Number), mono = true)
             Text("Between 5 and 480 minutes.", fontSize = 12.sp, color = LocalHf.current.muted)
+            HfSegmented(listOf("25m", "45m", "60m", "90m", "Custom"), 4, onSelect = { i ->
+                if (i < 4) { onMin(presets[i]); showCustom = false }
+            })
+            Spacer(Modifier.height(4.dp))
+            HfPrimary("Set length", onClick = { if (ok) { onMin(v!!); showCustom = false } })
+            TextButton(onClick = { showCustom = false }, modifier = Modifier.fillMaxWidth()) {
+                Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
-        HfField(intent, { intent = it }, "Intent (optional)")
-        Spacer(Modifier.height(2.dp))
+        return
+    }
+    HfSheet(onDismiss = onClose) {
+        Eyebrow("New session")
+        Text("Start a session", style = MaterialTheme.typography.titleLarge)
+        HfCard {
+            HfRow(title = "Place", end = { MonoVal((places.firstOrNull { it.id == placeId }?.name ?: "-") + "  \u203A") },
+                onClick = { open = if (open == "place") "" else "place" })
+            if (open == "place") Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                places.forEach { p -> HfChip(p.name, p.id == placeId) { onPlace(p.id); open = "" } }
+            }
+            HfDivider()
+            HfRow(title = "Length", end = { MonoVal("${minutes}m  \u203A") },
+                onClick = { open = if (open == "length") "" else "length" })
+            if (open == "length") HfSegmented(listOf("25m", "45m", "60m", "90m", "Custom"),
+                presets.indexOf(minutes).let { if (it < 0) 4 else it }, onSelect = { i ->
+                    if (i == 4) showCustom = true else { onMin(presets[i]); open = "" } })
+            HfDivider()
+            HfRow(title = "Intent (optional)", end = { MonoVal(if (intent.isBlank()) "Add" else "Edit") },
+                onClick = { open = if (open == "intent") "" else "intent" })
+            if (open == "intent") HfField(intent, { intent = it }, "What are you working on?")
+        }
+        Spacer(Modifier.height(4.dp))
         HfPrimary("Begin", onClick = { vm.startSession(placeId, minutes, intent); onClose() })
         TextButton(onClick = onClose, modifier = Modifier.fillMaxWidth()) {
             Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant) }

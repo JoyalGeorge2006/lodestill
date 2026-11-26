@@ -29,6 +29,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val _timerOnly = MutableStateFlow(false)
     val timerOnly: StateFlow<Boolean> = _timerOnly
     fun setTimerOnly(v: Boolean) { _timerOnly.value = v }
+    // Last session that just completed; drives the "Layer built" screen until dismissed.
+    // (The DB's current-session query excludes COMPLETED rows, so this keeps the screen reachable.)
+    private val _completed = MutableStateFlow<FocusSession?>(null)
+    val completed: StateFlow<FocusSession?> = _completed
+    fun dismissCompleted() { _completed.value = null }
     private var ticker: Job? = null
     private var serviceStartedFor: Long = -1
 
@@ -38,7 +43,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 var cur = s
                 if (cur != null) {
                     val r = Engine.settle(cur, System.currentTimeMillis())
-                    if (r.event != "none") { db.sessions().update(r.s); cur = r.s }
+                    if (r.event != "none") { db.sessions().update(r.s); cur = r.s; if (r.event == "completed") _completed.value = r.s }
                 }
                 _current.value = cur
                 if (cur != null && (cur.status == "ACTIVE" || cur.status == "PAUSED")) {
@@ -73,6 +78,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                     val r = Engine.settle(s, _now.value)
                     if (r.event == "completed") {
                         db.sessions().update(r.s)
+                        _completed.value = r.s
                         setDnd(false)
                         dev.joyal.lodestill.service.TimerService.stop(getApplication())
                     }
