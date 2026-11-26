@@ -84,6 +84,6 @@ class ScreenshotTest {
         tryStep("09-places") { tap("PLACES"); shot("09-places") }
         tryStep("12-notes") { tap("NOTES"); shot("12-notes") }
         tryStep("13-settings") { tap("SETTINGS"); shot("13-settings") }
-        tryStep("14-permissions") { rule.onNodeWithText("Blocking and permissions").performScrollTo(); rule.waitForIdle(); tap("Blocking and permissions"); shot("14-permissions") }
+        tryStep("14-permissions") { rule.onNodeWithText("Blocking and permissions").performScrollTo(); rule.waitForIdle(); tap("Blocking and permissions"); shot("14-permissions"); rule.onNodeWithText("Accessibility service").performScrollTo(); rule.waitForIdle(); shot("14b-permissions-bottom") }
     }
 }
